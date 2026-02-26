@@ -99,6 +99,14 @@ func fire() -> void:
 			overheated.emit()
 
 	fired.emit()
+	
+	if owner_car and owner_car.is_player and NakamaManager.current_match:
+		var data = {
+			"session_id": owner_car.network_id,
+			"slot": mount_type
+		}
+		NakamaManager.send_match_state(NakamaManager.OpCodes.FIRE_WEAPON, JSON.stringify(data))
+		
 	_do_fire()
 
 

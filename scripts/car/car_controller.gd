@@ -30,6 +30,7 @@ var boost_meter: float = 0.0
 var is_boosting: bool = false
 var is_alive: bool = true
 var is_player: bool = false ## only true for the local player's car
+var network_id: String = "" ## session_id of the owning player
 var is_emp_disabled: bool = false
 var _emp_timer: float = 0.0
 var current_speed_kmh: float = 0.0

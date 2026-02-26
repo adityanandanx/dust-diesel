@@ -18,12 +18,24 @@ func _ready() -> void:
 	start_button.pressed.connect(_on_start_pressed)
 	back_button.pressed.connect(_on_back_pressed)
 
-	# Generate a simple invite code for display
-	invite_code = "DD-%s" % _generate_code(4)
-	code_label.text = "INVITE CODE: %s" % invite_code
+	if NakamaManager.current_match:
+		invite_code = NakamaManager.match_name
+		code_label.text = "INVITE CODE: %s" % invite_code
+		
+		# Assuming host is the one who created it (simplification for relayed matches)
+		# A better check would be if we are the only one in the lobby on join
+		is_host = NakamaManager.connected_players.size() <= 1
+		NakamaManager.is_host = is_host
+		start_button.visible = is_host
 
-	start_button.visible = is_host
-	_add_player_entry("You", true)
+		NakamaManager.player_joined.connect(_on_player_joined)
+		NakamaManager.player_left.connect(_on_player_left)
+		NakamaManager.game_started.connect(_on_game_started)
+		
+		_refresh_players()
+	else:
+		code_label.text = "NOT CONNECTED"
+		start_button.visible = false
 
 
 func _on_ready_pressed() -> void:
@@ -32,11 +44,41 @@ func _on_ready_pressed() -> void:
 
 
 func _on_start_pressed() -> void:
-	get_tree().change_scene_to_file("res://scenes/game/Game.tscn")
+	if is_host and NakamaManager.current_match:
+		NakamaManager.send_match_state(NakamaManager.OpCodes.GAME_STARTED, "")
+		_on_game_started()
 
 
 func _on_back_pressed() -> void:
+	NakamaManager.leave_match()
 	get_tree().change_scene_to_file("res://scenes/ui/MainMenu.tscn")
+
+
+func _on_game_started() -> void:
+	get_tree().change_scene_to_file("res://scenes/game/Game.tscn")
+
+
+func _refresh_players() -> void:
+	# Clear list
+	for child in player_list.get_children():
+		child.queue_free()
+		
+	# Re-add everyone
+	for sess_id in NakamaManager.connected_players:
+		var p_data: Dictionary = NakamaManager.connected_players[sess_id]
+		var is_me = (NakamaManager.current_match and sess_id == NakamaManager.current_match.self_user.session_id)
+		var display_name = p_data.get("username", "Unknown")
+		if is_me:
+			display_name += " (You)"
+		_add_player_entry(display_name, true)
+
+
+func _on_player_joined(_sess_id: String, _user_id: String, _username: String) -> void:
+	_refresh_players()
+
+
+func _on_player_left(_sess_id: String) -> void:
+	_refresh_players()
 
 
 func _add_player_entry(player_name: String, ready_state: bool) -> void:
@@ -50,11 +92,3 @@ func _add_player_entry(player_name: String, ready_state: bool) -> void:
 	hbox.add_child(name_label)
 	hbox.add_child(status_label)
 	player_list.add_child(hbox)
-
-
-func _generate_code(length: int) -> String:
-	var chars := "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-	var code := ""
-	for i in range(length):
-		code += chars[randi() % chars.length()]
-	return code

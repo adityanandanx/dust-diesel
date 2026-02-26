@@ -20,6 +20,19 @@ var weapon_mount_hp: float = 60.0
 
 
 func take_damage(zone: DamageZone, amount: float) -> void:
+	if NakamaManager.current_match:
+		var car = get_parent()
+		var data = {
+			"target": car.network_id if car.network_id != "" else NakamaManager.current_match.self_user.session_id,
+			"zone": zone,
+			"amount": amount
+		}
+		NakamaManager.send_match_state(NakamaManager.OpCodes.DAMAGE_EVENT, JSON.stringify(data))
+	
+	_apply_damage_internal(zone, amount)
+
+
+func _apply_damage_internal(zone: DamageZone, amount: float) -> void:
 	match zone:
 		DamageZone.ENGINE:
 			engine_hp = maxf(engine_hp - amount, 0.0)

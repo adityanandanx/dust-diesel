@@ -31,7 +31,7 @@ func _on_destroyed() -> void:
 		mesh.mesh = box_mesh
 		var mat := StandardMaterial3D.new()
 		mat.albedo_color = Color(0.4, 0.35, 0.3, 1)
-		mesh.surface_material_override[0] = mat
+		mesh.set_surface_override_material(0, mat)
 		debris.add_child(mesh)
 
 		var col := CollisionShape3D.new()

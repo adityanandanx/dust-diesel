@@ -53,6 +53,11 @@ func _on_hit(collision: KinematicCollision3D) -> void:
 
 	hit.emit(collider)
 
+	# Remote projectiles deal no damage to prevent double-dipping in multiplayer
+	if owner_car and not owner_car.is_player and NakamaManager.current_match:
+		queue_free()
+		return
+
 	# Direct damage
 	if collider.has_method("take_hit"):
 		collider.take_hit(damage, global_position, owner_car)

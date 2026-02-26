@@ -12,6 +12,12 @@ var _target: Node3D
 func _ready() -> void:
 	top_level = true
 	_target = get_parent()
+	
+	# Only activate camera for the local player's car
+	if _target.has_method("get") and _target.is_player:
+		make_current()
+	else:
+		set_physics_process(false)
 
 
 func _physics_process(delta: float) -> void:

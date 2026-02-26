@@ -14,8 +14,10 @@ func _ready() -> void:
 
 func _on_create_pressed() -> void:
 	status_label.text = "Creating lobby..."
-	# For Phase 1 local testing, go straight to the game
-	get_tree().change_scene_to_file("res://scenes/game/Game.tscn")
+	NakamaManager.create_match()
+	
+	await NakamaManager.match_joined
+	get_tree().change_scene_to_file("res://scenes/ui/Lobby.tscn")
 
 
 func _on_join_pressed() -> void:
@@ -24,8 +26,11 @@ func _on_join_pressed() -> void:
 		status_label.text = "Enter an invite code."
 		return
 	status_label.text = "Joining %s..." % code
-	# Multiplayer join will be added in Phase 4
-	get_tree().change_scene_to_file("res://scenes/game/Game.tscn")
+	
+	NakamaManager.join_match(code)
+	
+	await NakamaManager.match_joined
+	get_tree().change_scene_to_file("res://scenes/ui/Lobby.tscn")
 
 
 func _on_quit_pressed() -> void:

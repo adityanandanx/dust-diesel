@@ -5,6 +5,8 @@
 [ext_resource type="Script" uid="uid://bmdglrejhr7d8" path="res://scripts/car/car_fuel.gd" id="3_fuel"]
 [ext_resource type="Script" uid="uid://bu0i2u81i0o6c" path="res://scripts/car/car_damage.gd" id="4_dmg"]
 [ext_resource type="Script" uid="uid://b1w3l3qwuykxd" path="res://scripts/car/car_camera.gd" id="5_cam"]
+[ext_resource type="Script" uid="uid://dipfvvcl608ow" path="res://scripts/network/network_sync.gd" id="6_net"]
+[ext_resource type="Script" uid="uid://bkhv4rh2p3546" path="res://scripts/car/car_debug_label.gd" id="7_dbg"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_tn0jf"]
 friction = 0.22
@@ -107,5 +109,13 @@ script = ExtResource("3_fuel")
 [node name="DamageSystem" type="Node" parent="." unique_id=166317889]
 script = ExtResource("4_dmg")
 
-[node name="WeaponMount" type="Node3D" parent="." unique_id=489476121]
+[node name="WeaponMount" type="Node3D" parent="." unique_id=475629504]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 1.5)
+
+[node name="NetworkSync" type="Node" parent="." unique_id=1872429279]
+script = ExtResource("6_net")
+
+[node name="DebugLabel" type="Label3D" parent="." unique_id=62709717]
+pixel_size = 0.0145
+billboard = 1
+script = ExtResource("7_dbg")

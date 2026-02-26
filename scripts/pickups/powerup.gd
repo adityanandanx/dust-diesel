@@ -77,7 +77,7 @@ func _apply_repair(car: VehicleBody3D) -> void:
 		"engine": [dmg.engine_hp, dmg.max_engine_hp],
 		"chassis": [dmg.chassis_hp, dmg.max_chassis_hp],
 		"wheels": [dmg.wheel_hp, dmg.max_wheel_hp],
-		"weapon_mount": [dmg.weapon_mount_hp, dmg.max_weapon_mount_hp],
+		"weapon_mount": [dmg.weapon_mount_hp, dmg.max_weapon_hp],
 	}
 	var worst_zone := ""
 	var worst_ratio := 1.1
@@ -94,7 +94,7 @@ func _apply_repair(car: VehicleBody3D) -> void:
 	elif worst_zone == "wheels":
 		dmg.wheel_hp = minf(dmg.wheel_hp + 50.0, dmg.max_wheel_hp)
 	elif worst_zone == "weapon_mount":
-		dmg.weapon_mount_hp = minf(dmg.weapon_mount_hp + 50.0, dmg.max_weapon_mount_hp)
+		dmg.weapon_mount_hp = minf(dmg.weapon_mount_hp + 50.0, dmg.max_weapon_hp)
 
 
 func _apply_ammo(car: VehicleBody3D) -> void:

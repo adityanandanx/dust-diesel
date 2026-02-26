@@ -13,6 +13,7 @@ signal collected(car: Node)
 var _age: float = 0.0
 var _start_y: float = 0.0
 var _is_collected: bool = false
+var pickup_id: int = -1
 
 
 func _ready() -> void:
@@ -43,9 +44,19 @@ func _on_body_entered(body: Node3D) -> void:
 	if _is_collected:
 		return
 	if body is VehicleBody3D:
+		# In singleplayer (no match), any car can pick up
+		# In multiplayer, only the local player claims officially
+		if NakamaManager.current_match and not body.is_player:
+			return
+		
 		_is_collected = true
 		apply(body)
 		collected.emit(body)
+		
+		if NakamaManager.current_match:
+			var data = {"id": pickup_id}
+			NakamaManager.send_match_state(NakamaManager.OpCodes.PICKUP_CLAIM, JSON.stringify(data))
+			
 		queue_free()
 
 

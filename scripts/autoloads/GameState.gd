@@ -34,13 +34,13 @@ func _ready() -> void:
 
 func _initialize() -> void:
 	# Try to restore an existing session first
-	var restored := await NakamaManager.restore_session_async()
+	var restored = await NakamaManager.restore_session_async()
 	if restored:
 		print("[GameState] Session restored from saved tokens.")
 		await _post_authentication()
 	else:
 		# Authenticate with device ID (creates account automatically)
-		var session := await NakamaManager.authenticate_device_async()
+		var session = await NakamaManager.authenticate_device_async()
 		if session != null:
 			await _post_authentication()
 		else:
@@ -58,7 +58,7 @@ func _post_authentication() -> void:
 	player_info_updated.emit(account)
 
 	# Connect the real-time socket
-	var socket_ok := await NakamaManager.connect_socket_async()
+	var socket_ok = await NakamaManager.connect_socket_async()
 	if socket_ok:
 		_setup_socket_listeners()
 		print("[GameState] Ready for real-time features.")
