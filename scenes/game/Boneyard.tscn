@@ -1,5 +1,11 @@
 [gd_scene format=3 uid="uid://cyattlw2wa6v7"]
 
+[ext_resource type="PackedScene" path="res://scenes/environment/FuelBarrel.tscn" id="1_fb"]
+[ext_resource type="PackedScene" path="res://scenes/environment/ScrapPile.tscn" id="2_sp"]
+[ext_resource type="PackedScene" path="res://scenes/environment/Watchtower.tscn" id="3_wt"]
+[ext_resource type="PackedScene" path="res://scenes/environment/AbandonedVehicle.tscn" id="4_av"]
+[ext_resource type="PackedScene" path="res://scenes/environment/GasStation.tscn" id="5_gs"]
+
 [sub_resource type="BoxShape3D" id="ground_shape"]
 size = Vector3(100, 0.2, 100)
 
@@ -131,18 +137,6 @@ use_collision = true
 size = Vector3(15, 3, 1.5)
 material = SubResource("wall_mat")
 
-[node name="TowerA" type="CSGBox3D" parent="Interior" unique_id=553222109]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, 2.5, 5)
-use_collision = true
-size = Vector3(4, 5, 4)
-material = SubResource("wall_mat")
-
-[node name="TowerB" type="CSGBox3D" parent="Interior" unique_id=1678773683]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 2.5, -5)
-use_collision = true
-size = Vector3(4, 5, 4)
-material = SubResource("wall_mat")
-
 [node name="Overpass" type="CSGBox3D" parent="." unique_id=210074120]
 transform = Transform3D(0.707, 0.122, 0.707, 0, 0.985, -0.174, -0.707, 0.122, 0.707, 0, 1.5, 0)
 use_collision = true
@@ -165,3 +159,53 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 0, 0)
 
 [node name="GasStation" type="Marker3D" parent="Landmarks" unique_id=1771696663]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, -5)
+
+[node name="Environment" type="Node3D" parent="." unique_id=1288113499]
+
+[node name="GasStation" parent="Environment" unique_id=176930697 instance=ExtResource("5_gs")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, -5)
+
+[node name="WatchtowerA" parent="Environment" unique_id=441324317 instance=ExtResource("3_wt")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, 0, 5)
+
+[node name="WatchtowerB" parent="Environment" unique_id=1358912536 instance=ExtResource("3_wt")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, -5)
+
+[node name="ScrapPile1" parent="Environment" unique_id=1543048002 instance=ExtResource("2_sp")]
+transform = Transform3D(0.707, 0, 0.707, 0, 1, 0, -0.707, 0, 0.707, 30, 0, -30)
+
+[node name="ScrapPile2" parent="Environment" unique_id=808111378 instance=ExtResource("2_sp")]
+transform = Transform3D(0.707, 0, -0.707, 0, 1, 0, 0.707, 0, 0.707, -30, 0, -30)
+
+[node name="ScrapPile3" parent="Environment" unique_id=809290289 instance=ExtResource("2_sp")]
+transform = Transform3D(0.707, 0, -0.707, 0, 1, 0, 0.707, 0, 0.707, 30, 0, 30)
+
+[node name="ScrapPile4" parent="Environment" unique_id=92239279 instance=ExtResource("2_sp")]
+transform = Transform3D(0.707, 0, 0.707, 0, 1, 0, -0.707, 0, 0.707, -30, 0, 30)
+
+[node name="Wreck1" parent="Environment" unique_id=967689410 instance=ExtResource("4_av")]
+transform = Transform3D(0.5, 0, 0.866, 0, 1, 0, -0.866, 0, 0.5, 40, 0, -40)
+
+[node name="Wreck2" parent="Environment" unique_id=883357852 instance=ExtResource("4_av")]
+transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, -40, 0, -40)
+
+[node name="Wreck3" parent="Environment" unique_id=1691878217 instance=ExtResource("4_av")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0, 0, 45)
+
+[node name="Barrel1" parent="Environment" unique_id=1096123592 instance=ExtResource("1_fb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0, -10)
+
+[node name="Barrel2" parent="Environment" unique_id=1889640543 instance=ExtResource("1_fb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0, -10)
+
+[node name="Barrel3" parent="Environment" unique_id=1321831223 instance=ExtResource("1_fb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 0, 10)
+
+[node name="Barrel4" parent="Environment" unique_id=84084647 instance=ExtResource("1_fb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37, 0, 10)
+
+[node name="Barrel5" parent="Environment" unique_id=494979989 instance=ExtResource("1_fb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 20)
+
+[node name="Barrel6" parent="Environment" unique_id=582564588 instance=ExtResource("1_fb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 20)

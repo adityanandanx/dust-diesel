@@ -1,22 +1,22 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://byk5bctch187v"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_wreck"]
-size = Vector3(2.0, 0.6, 4.0)
+size = Vector3(2, 0.6, 4)
 
 [sub_resource type="BoxMesh" id="BoxMesh_wreck"]
-size = Vector3(2.0, 0.6, 4.0)
+size = Vector3(2, 0.6, 4)
 
 [sub_resource type="StandardMaterial3D" id="Mat_wreck"]
 albedo_color = Color(0.2, 0.18, 0.15, 1)
 
-[node name="CarWreck" type="RigidBody3D"]
+[node name="CarWreck" type="RigidBody3D" unique_id=771078794]
 mass = 800.0
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1516422024]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
 shape = SubResource("BoxShape3D_wreck")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1327956656]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
 mesh = SubResource("BoxMesh_wreck")
 surface_material_override/0 = SubResource("Mat_wreck")

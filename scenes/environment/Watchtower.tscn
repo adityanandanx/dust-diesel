@@ -1,0 +1,32 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/environment/watchtower.gd" id="1_wt"]
+
+[sub_resource type="BoxShape3D" id="BoxShape_tower"]
+size = Vector3(2.0, 6.0, 2.0)
+
+[sub_resource type="BoxMesh" id="BoxMesh_pillar"]
+size = Vector3(1.5, 5.0, 1.5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_platform"]
+size = Vector3(3.0, 0.5, 3.0)
+
+[sub_resource type="StandardMaterial3D" id="Mat_tower"]
+albedo_color = Color(0.4, 0.35, 0.3, 1)
+
+[node name="Watchtower" type="RigidBody3D"]
+script = ExtResource("1_wt")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
+shape = SubResource("BoxShape_tower")
+
+[node name="Pillar" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+mesh = SubResource("BoxMesh_pillar")
+surface_material_override/0 = SubResource("Mat_tower")
+
+[node name="Platform" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.25, 0)
+mesh = SubResource("BoxMesh_platform")
+surface_material_override/0 = SubResource("Mat_tower")

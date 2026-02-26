@@ -1,6 +1,6 @@
 extends Control
 
-## In-game HUD — fuel gauge, boost bar, minimap placeholder, kill feed, damage indicators.
+## In-game HUD — fuel, boost, speed, weapon indicator, kill feed, damage flash.
 
 @onready var fuel_bar: ProgressBar = $FuelGauge/FuelBar
 @onready var fuel_label: Label = $FuelGauge/FuelLabel
@@ -11,6 +11,13 @@ extends Control
 @onready var damage_right: ColorRect = $DamageIndicators/Right
 @onready var damage_top: ColorRect = $DamageIndicators/Top
 @onready var damage_bottom: ColorRect = $DamageIndicators/Bottom
+
+# Weapon panel
+@onready var weapon_name_label: Label = $WeaponPanel/WeaponName
+@onready var weapon_ammo_label: Label = $WeaponPanel/AmmoLabel
+@onready var weapon_heat_bar: ProgressBar = $WeaponPanel/HeatBar
+@onready var weapon_status_label: Label = $WeaponPanel/StatusLabel
+@onready var emp_overlay: ColorRect = $EMPOverlay
 
 var _bound_car: Car = null
 var _damage_flash_timers: Dictionary = {} # direction -> float
@@ -36,6 +43,12 @@ func _process(delta: float) -> void:
 	boost_bar.value = _bound_car.boost_meter
 	boost_bar.max_value = _bound_car.boost_meter_max
 
+	# Weapon display
+	_update_weapon_panel()
+
+	# EMP overlay
+	emp_overlay.visible = _bound_car.is_emp_disabled
+
 	# Fade damage indicators
 	for dir_key in _damage_flash_timers.keys():
 		_damage_flash_timers[dir_key] -= delta
@@ -44,6 +57,52 @@ func _process(delta: float) -> void:
 			panel.modulate.a = clampf(_damage_flash_timers[dir_key] / 0.5, 0.0, 0.8)
 		if _damage_flash_timers[dir_key] <= 0.0:
 			_damage_flash_timers.erase(dir_key)
+
+
+func _update_weapon_panel() -> void:
+	var weapon = _bound_car.primary_weapon
+	var secondary = _bound_car.secondary_weapon
+
+	if not weapon and not secondary:
+		weapon_name_label.text = "NO WEAPON"
+		weapon_ammo_label.text = ""
+		weapon_heat_bar.value = 0
+		weapon_status_label.text = ""
+		return
+
+	# Show primary weapon name (or secondary if no primary)
+	var display_weapon = weapon if weapon else secondary
+	var wname: String = display_weapon.name.to_upper()
+	if weapon and secondary:
+		wname += "  |  " + secondary.name.to_upper()
+	weapon_name_label.text = wname
+
+	# Ammo display
+	var ammo_parts: Array[String] = []
+	if weapon:
+		ammo_parts.append("∞" if weapon.max_ammo <= 0 else "%d/%d" % [weapon.ammo, weapon.max_ammo])
+	if secondary:
+		ammo_parts.append("∞" if secondary.max_ammo <= 0 else "%d/%d" % [secondary.ammo, secondary.max_ammo])
+	weapon_ammo_label.text = "  |  ".join(ammo_parts)
+
+	# Heat / reload bar
+	if weapon.reload_type == weapon.ReloadType.OVERHEAT:
+		weapon_heat_bar.value = weapon.heat
+		weapon_heat_bar.max_value = weapon.max_heat
+		weapon_heat_bar.visible = true
+	else:
+		weapon_heat_bar.visible = false
+
+	# Status text
+	if weapon.is_overheated:
+		weapon_status_label.text = "OVERHEATED"
+		weapon_status_label.add_theme_color_override("font_color", Color(1, 0.3, 0.1))
+	elif weapon.is_reloading:
+		weapon_status_label.text = "RELOADING"
+		weapon_status_label.add_theme_color_override("font_color", Color(1, 0.85, 0.3))
+	else:
+		weapon_status_label.text = "READY"
+		weapon_status_label.add_theme_color_override("font_color", Color(0.3, 1, 0.4))
 
 
 func _on_fuel_changed(current: float, max_fuel: float) -> void:

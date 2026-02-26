@@ -1,0 +1,26 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/environment/scrap_pile.gd" id="1_sp"]
+
+[sub_resource type="BoxShape3D" id="BoxShape_scrap"]
+size = Vector3(2.5, 1.5, 2.5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_scrap"]
+size = Vector3(2.5, 1.5, 2.5)
+
+[sub_resource type="StandardMaterial3D" id="Mat_scrap"]
+albedo_color = Color(0.3, 0.25, 0.2, 1)
+metallic = 0.8
+roughness = 0.6
+
+[node name="ScrapPile" type="RigidBody3D"]
+script = ExtResource("1_sp")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+shape = SubResource("BoxShape_scrap")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+mesh = SubResource("BoxMesh_scrap")
+surface_material_override/0 = SubResource("Mat_scrap")

@@ -8,6 +8,8 @@ signal match_ended(winner_name: String)
 
 const CarScene := preload("res://scenes/vehicles/Car.tscn")
 const WreckScene := preload("res://scenes/vehicles/CarWreck.tscn")
+const WeaponScene := preload("res://scenes/weapons/ScrapCannon.tscn")
+const WeaponScene2 := preload("res://scenes/weapons/MineLayer.tscn")
 
 @onready var spawn_points: Node3D = $SpawnPoints
 @onready var cars_container: Node3D = $Cars
@@ -26,6 +28,7 @@ func _spawn_players() -> void:
 	var points := spawn_points.get_children()
 	# For Phase 1: spawn 1 player car at first spawn point
 	var car: Car = CarScene.instantiate()
+	car.is_player = true
 	cars_container.add_child(car)
 	car.global_transform = points[0].global_transform
 	car.car_destroyed.connect(_on_car_destroyed)
@@ -36,6 +39,18 @@ func _spawn_players() -> void:
 	if hud and hud.has_method("bind_car"):
 		hud.bind_car(car)
 
+	# Equip starting weapon
+	car.equip_weapon(WeaponScene.instantiate())
+	car.equip_weapon(WeaponScene2.instantiate())
+
+	# Spawn a dummy target car for testing
+	if points.size() > 3:
+		var dummy: Car = CarScene.instantiate()
+		cars_container.add_child(dummy)
+		dummy.global_transform = points[0].global_transform
+		dummy.car_destroyed.connect(_on_car_destroyed)
+		dummy.car_stalled.connect(_on_car_stalled)
+		alive_cars.append(dummy)
 
 func _on_car_destroyed(car: Car) -> void:
 	_eliminate_car(car, "destroyed")

@@ -29,8 +29,15 @@ signal car_stalled(car: Car)
 var boost_meter: float = 0.0
 var is_boosting: bool = false
 var is_alive: bool = true
+var is_player: bool = false ## only true for the local player's car
+var is_emp_disabled: bool = false
+var _emp_timer: float = 0.0
 var current_speed_kmh: float = 0.0
 var _steer_current: float = 0.0
+
+# ---------- Weapons ----------
+var primary_weapon: WeaponBase = null
+var secondary_weapon: WeaponBase = null
 
 # ---------- Node References ----------
 @onready var drift_system: CarDriftSystem = $DriftSystem
@@ -40,6 +47,7 @@ var _steer_current: float = 0.0
 @onready var front_right_wheel: VehicleWheel3D = $FrontRight
 @onready var rear_left_wheel: VehicleWheel3D = $RearLeft
 @onready var rear_right_wheel: VehicleWheel3D = $RearRight
+@onready var weapon_mount: Node3D = $WeaponMount
 
 
 func _ready() -> void:
@@ -47,6 +55,14 @@ func _ready() -> void:
 		damage_system.car_destroyed.connect(_on_car_destroyed)
 	if fuel_system:
 		fuel_system.fuel_empty.connect(_on_fuel_empty)
+	# Non-player cars: disable camera and fuel drain
+	if not is_player:
+		var cam := get_node_or_null("TopDownCamera") as Camera3D
+		if cam:
+			cam.current = false
+			cam.set_physics_process(false)
+		if fuel_system:
+			fuel_system.set_physics_process(false)
 
 
 func _physics_process(delta: float) -> void:
@@ -55,14 +71,26 @@ func _physics_process(delta: float) -> void:
 		brake = max_brake_force
 		return
 
+	# EMP disable
+	if is_emp_disabled:
+		_emp_timer -= delta
+		engine_force = 0.0
+		brake = max_brake_force * 0.5
+		if _emp_timer <= 0.0:
+			is_emp_disabled = false
+		return
+
 	current_speed_kmh = linear_velocity.length() * 3.6
 
 	_handle_steering(delta)
 	_handle_acceleration(delta)
 	_handle_boost(delta)
+	_handle_weapons()
 
 
 func _handle_steering(delta: float) -> void:
+	if not is_player:
+		return
 	var steer_input := Input.get_axis("steer_right", "steer_left")
 	var steer_target := steer_input * max_steer_angle
 
@@ -84,6 +112,10 @@ func _handle_steering(delta: float) -> void:
 
 
 func _handle_acceleration(_delta: float) -> void:
+	if not is_player:
+		engine_force = 0.0
+		brake = 0.0
+		return
 	var accel := Input.get_action_strength("accelerate")
 	var brake_input := Input.get_action_strength("brake")
 
@@ -112,6 +144,8 @@ func _handle_acceleration(_delta: float) -> void:
 
 
 func _handle_boost(delta: float) -> void:
+	if not is_player:
+		return
 	if Input.is_action_pressed("boost") and boost_meter > 0.0:
 		is_boosting = true
 		boost_meter = maxf(boost_meter - boost_drain_rate * delta, 0.0)
@@ -133,6 +167,52 @@ func get_forward_speed() -> float:
 ## Sideways velocity component
 func get_lateral_speed() -> float:
 	return transform.basis.x.dot(linear_velocity)
+
+
+func _handle_weapons() -> void:
+	if not is_player:
+		return
+	if Input.is_action_pressed("fire_primary") and primary_weapon and primary_weapon.can_fire():
+		primary_weapon.fire()
+	if Input.is_action_pressed("fire_secondary") and secondary_weapon and secondary_weapon.can_fire():
+		secondary_weapon.fire()
+
+
+func equip_weapon(weapon: WeaponBase) -> void:
+	# Add to tree first so _ready() sets mount_type
+	weapon.owner_car = self
+	if weapon.get_parent():
+		weapon.reparent(weapon_mount)
+	else:
+		weapon_mount.add_child(weapon)
+
+	# Now check slot (mount_type is set by _ready)
+	var slot := weapon.mount_type
+	if slot == WeaponBase.MountType.PRIMARY:
+		if primary_weapon and primary_weapon != weapon:
+			drop_weapon(WeaponBase.MountType.PRIMARY)
+		primary_weapon = weapon
+	else:
+		if secondary_weapon and secondary_weapon != weapon:
+			drop_weapon(WeaponBase.MountType.SECONDARY)
+		secondary_weapon = weapon
+
+
+func drop_weapon(slot: WeaponBase.MountType) -> void:
+	var weapon: WeaponBase
+	if slot == WeaponBase.MountType.PRIMARY:
+		weapon = primary_weapon
+		primary_weapon = null
+	else:
+		weapon = secondary_weapon
+		secondary_weapon = null
+	if weapon:
+		weapon.queue_free()
+
+
+func apply_emp(duration: float) -> void:
+	is_emp_disabled = true
+	_emp_timer = duration
 
 
 func _on_car_destroyed() -> void:

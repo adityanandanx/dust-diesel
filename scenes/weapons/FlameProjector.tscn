@@ -1,0 +1,52 @@
+[gd_scene format=3 uid="uid://cmghtyyo0g0k5"]
+
+[ext_resource type="Script" uid="uid://di2b24hb1cvi6" path="res://scripts/weapons/flame_projector.gd" id="1_fp"]
+
+[sub_resource type="CylinderMesh" id="ConeMesh_nozzle"]
+top_radius = 0.01
+bottom_radius = 0.2
+
+[sub_resource type="StandardMaterial3D" id="Mat_fp"]
+albedo_color = Color(0.85, 0.35, 0.1, 1)
+metallic = 0.5
+
+[sub_resource type="StandardMaterial3D" id="Mat_flame_draw"]
+transparency = 1
+albedo_color = Color(1, 0.5, 0.05, 0.85)
+emission_enabled = true
+emission = Color(1, 0.4, 0.05, 1)
+emission_energy_multiplier = 3.0
+billboard_mode = 1
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleMat_flame"]
+direction = Vector3(0, 0, 1)
+spread = 15.0
+initial_velocity_min = 8.0
+initial_velocity_max = 12.0
+gravity = Vector3(0, 2, 0)
+scale_min = 0.3
+scale_max = 0.8
+color = Color(1, 0.6, 0.1, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_particle"]
+radius = 0.15
+height = 0.3
+
+[node name="FlameProjector" type="Node3D" unique_id=453456189]
+script = ExtResource("1_fp")
+
+[node name="Nozzle" type="MeshInstance3D" parent="." unique_id=1105948471]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 1)
+mesh = SubResource("ConeMesh_nozzle")
+surface_material_override/0 = SubResource("Mat_fp")
+
+[node name="FlameParticles" type="GPUParticles3D" parent="." unique_id=1563821070]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.2)
+material_override = SubResource("Mat_flame_draw")
+emitting = false
+amount = 40
+lifetime = 0.5
+speed_scale = 2.0
+explosiveness = 0.1
+process_material = SubResource("ParticleMat_flame")
+draw_pass_1 = SubResource("SphereMesh_particle")

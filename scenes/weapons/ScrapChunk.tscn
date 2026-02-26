@@ -1,0 +1,30 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/projectile_base.gd" id="1_proj"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_chunk"]
+radius = 0.5
+
+[sub_resource type="BoxMesh" id="BoxMesh_chunk"]
+size = Vector3(0.8, 0.6, 0.8)
+
+[sub_resource type="StandardMaterial3D" id="Mat_chunk"]
+albedo_color = Color(0.4, 0.35, 0.3, 1)
+
+[node name="ScrapChunk" type="CharacterBody3D"]
+collision_layer = 4
+collision_mask = 3
+script = ExtResource("1_proj")
+speed = 40.0
+damage = 60.0
+lifetime = 4.0
+splash_radius = 5.0
+splash_damage = 25.0
+max_bounces = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_chunk")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_chunk")
+surface_material_override/0 = SubResource("Mat_chunk")

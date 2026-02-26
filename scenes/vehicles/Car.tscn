@@ -6,6 +6,9 @@
 [ext_resource type="Script" uid="uid://bu0i2u81i0o6c" path="res://scripts/car/car_damage.gd" id="4_dmg"]
 [ext_resource type="Script" uid="uid://b1w3l3qwuykxd" path="res://scripts/car/car_camera.gd" id="5_cam"]
 
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_tn0jf"]
+friction = 0.22
+
 [sub_resource type="BoxShape3D" id="BoxShape3D_body"]
 size = Vector3(1.8, 0.8, 4)
 
@@ -22,19 +25,18 @@ height = 0.2
 
 [node name="Car" type="VehicleBody3D" unique_id=1902546355]
 mass = 1200.0
+physics_material_override = SubResource("PhysicsMaterial_tn0jf")
 center_of_mass_mode = 1
 center_of_mass = Vector3(0, -0.3, 0)
 script = ExtResource("1_ctrl")
-max_speed_kmh = 132.905
-reverse_force_ratio = 16.02
 steer_return_speed = 20.17
 
 [node name="BodyCollision" type="CollisionShape3D" parent="." unique_id=410720277]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.70000005, 0)
 shape = SubResource("BoxShape3D_body")
 
 [node name="BodyMesh" type="MeshInstance3D" parent="." unique_id=1702067413]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.535385e-05, 0.70364803, -2.5451183e-05)
 mesh = SubResource("BoxMesh_body")
 surface_material_override/0 = SubResource("Mat_body")
 
@@ -104,3 +106,6 @@ script = ExtResource("3_fuel")
 
 [node name="DamageSystem" type="Node" parent="." unique_id=166317889]
 script = ExtResource("4_dmg")
+
+[node name="WeaponMount" type="Node3D" parent="." unique_id=489476121]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 1.5)

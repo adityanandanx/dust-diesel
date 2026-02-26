@@ -1,0 +1,28 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/oil_puddle.gd" id="1_oil"]
+
+[sub_resource type="CylinderShape3D" id="CylShape_puddle"]
+height = 0.1
+radius = 3.0
+
+[sub_resource type="CylinderMesh" id="CylMesh_puddle"]
+top_radius = 3.0
+bottom_radius = 3.0
+height = 0.05
+
+[sub_resource type="StandardMaterial3D" id="Mat_puddle"]
+albedo_color = Color(0.05, 0.05, 0.05, 0.8)
+transparency = 1
+
+[node name="OilPuddle" type="Area3D"]
+collision_layer = 8
+collision_mask = 1
+script = ExtResource("1_oil")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CylShape_puddle")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("CylMesh_puddle")
+surface_material_override/0 = SubResource("Mat_puddle")

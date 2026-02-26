@@ -1,0 +1,26 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/environment/abandoned_vehicle.gd" id="1_av"]
+
+[sub_resource type="BoxShape3D" id="BoxShape_car"]
+size = Vector3(2.0, 1.2, 4.0)
+
+[sub_resource type="BoxMesh" id="BoxMesh_car"]
+size = Vector3(2.0, 1.2, 4.0)
+
+[sub_resource type="StandardMaterial3D" id="Mat_wreck"]
+albedo_color = Color(0.2, 0.2, 0.2, 1)
+metallic = 0.9
+roughness = 0.5
+
+[node name="AbandonedVehicle" type="RigidBody3D"]
+script = ExtResource("1_av")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("BoxShape_car")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+mesh = SubResource("BoxMesh_car")
+surface_material_override/0 = SubResource("Mat_wreck")
