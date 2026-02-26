@@ -1,0 +1,167 @@
+[gd_scene format=3 uid="uid://cyattlw2wa6v7"]
+
+[sub_resource type="BoxShape3D" id="ground_shape"]
+size = Vector3(100, 0.2, 100)
+
+[sub_resource type="PlaneMesh" id="ground_mesh"]
+size = Vector2(100, 100)
+
+[sub_resource type="StandardMaterial3D" id="ground_mat"]
+albedo_color = Color(0.76, 0.65, 0.45, 1)
+
+[sub_resource type="StandardMaterial3D" id="wall_mat"]
+albedo_color = Color(0.4, 0.35, 0.3, 1)
+
+[sub_resource type="StandardMaterial3D" id="ramp_mat"]
+albedo_color = Color(0.5, 0.45, 0.4, 1)
+
+[node name="Boneyard" type="Node3D" unique_id=61303752]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=173540341]
+transform = Transform3D(0.86601907, -0.3535631, 0.3535593, 0, 0.70710295, 0.7071106, -0.500011, -0.61237127, 0.61236465, 0, 30, 0)
+light_color = Color(1, 0.92, 0.75, 1)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1435360165]
+
+[node name="Ground" type="StaticBody3D" parent="." unique_id=177162346]
+
+[node name="GroundCollision" type="CollisionShape3D" parent="Ground" unique_id=1040783400]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+shape = SubResource("ground_shape")
+
+[node name="GroundMesh" type="MeshInstance3D" parent="Ground" unique_id=1138918079]
+mesh = SubResource("ground_mesh")
+surface_material_override/0 = SubResource("ground_mat")
+
+[node name="Walls" type="Node3D" parent="." unique_id=865387695]
+
+[node name="WallNorth" type="CSGBox3D" parent="Walls" unique_id=946645537]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -50)
+use_collision = true
+size = Vector3(100, 3, 2)
+material = SubResource("wall_mat")
+
+[node name="WallSouth" type="CSGBox3D" parent="Walls" unique_id=1208437999]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 50)
+use_collision = true
+size = Vector3(100, 3, 2)
+material = SubResource("wall_mat")
+
+[node name="WallEast" type="CSGBox3D" parent="Walls" unique_id=1252527842]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 50, 1.5, 0)
+use_collision = true
+size = Vector3(2, 3, 100)
+material = SubResource("wall_mat")
+
+[node name="WallWest" type="CSGBox3D" parent="Walls" unique_id=669825758]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -50, 1.5, 0)
+use_collision = true
+size = Vector3(2, 3, 100)
+material = SubResource("wall_mat")
+
+[node name="InnerRing" type="Node3D" parent="." unique_id=919629970]
+
+[node name="InnerNorth" type="CSGBox3D" parent="InnerRing" unique_id=106278868]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -30)
+use_collision = true
+size = Vector3(50, 3, 1.5)
+material = SubResource("wall_mat")
+
+[node name="InnerSouth" type="CSGBox3D" parent="InnerRing" unique_id=1697871562]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 30)
+use_collision = true
+size = Vector3(50, 3, 1.5)
+material = SubResource("wall_mat")
+
+[node name="InnerWest" type="CSGBox3D" parent="InnerRing" unique_id=1465363000]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 1.5, 0)
+use_collision = true
+size = Vector3(1.5, 3, 50)
+material = SubResource("wall_mat")
+
+[node name="GapNorthEast" type="CSGBox3D" parent="InnerRing" unique_id=1865371261]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 1.5, -30)
+operation = 2
+use_collision = true
+size = Vector3(8, 4, 8)
+
+[node name="GapNorthWest" type="CSGBox3D" parent="InnerRing" unique_id=2102191861]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 1.5, -30)
+operation = 2
+use_collision = true
+size = Vector3(8, 4, 8)
+
+[node name="GapSouthEast" type="CSGBox3D" parent="InnerRing" unique_id=935198571]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 1.5, 30)
+operation = 2
+use_collision = true
+size = Vector3(8, 4, 8)
+
+[node name="GapSouthWest" type="CSGBox3D" parent="InnerRing" unique_id=1915594077]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 1.5, 30)
+operation = 2
+use_collision = true
+size = Vector3(8, 4, 8)
+
+[node name="Interior" type="Node3D" parent="." unique_id=2012241004]
+
+[node name="CorridorA" type="CSGBox3D" parent="Interior" unique_id=1951672956]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 1.5, -10)
+use_collision = true
+size = Vector3(1.5, 3, 18)
+material = SubResource("wall_mat")
+
+[node name="CorridorB" type="CSGBox3D" parent="Interior" unique_id=1440027798]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37.625458, 1.5, 10)
+use_collision = true
+size = Vector3(1.5, 3, 18)
+material = SubResource("wall_mat")
+
+[node name="CorridorC" type="CSGBox3D" parent="Interior" unique_id=1028693142]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -15)
+use_collision = true
+size = Vector3(15, 3, 1.5)
+material = SubResource("wall_mat")
+
+[node name="CorridorD" type="CSGBox3D" parent="Interior" unique_id=1190371910]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 15)
+use_collision = true
+size = Vector3(15, 3, 1.5)
+material = SubResource("wall_mat")
+
+[node name="TowerA" type="CSGBox3D" parent="Interior" unique_id=553222109]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, 2.5, 5)
+use_collision = true
+size = Vector3(4, 5, 4)
+material = SubResource("wall_mat")
+
+[node name="TowerB" type="CSGBox3D" parent="Interior" unique_id=1678773683]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 2.5, -5)
+use_collision = true
+size = Vector3(4, 5, 4)
+material = SubResource("wall_mat")
+
+[node name="Overpass" type="CSGBox3D" parent="." unique_id=210074120]
+transform = Transform3D(0.707, 0.122, 0.707, 0, 0.985, -0.174, -0.707, 0.122, 0.707, 0, 1.5, 0)
+use_collision = true
+size = Vector3(6, 0.5, 45)
+material = SubResource("ramp_mat")
+
+[node name="Landmarks" type="Node3D" parent="." unique_id=1060418542]
+
+[node name="FuelDepotNorth" type="Marker3D" parent="Landmarks" unique_id=1120954444]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -40)
+
+[node name="FuelDepotSouth" type="Marker3D" parent="Landmarks" unique_id=1657888971]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 40)
+
+[node name="FuelDepotEast" type="Marker3D" parent="Landmarks" unique_id=1798664048]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 0, 0)
+
+[node name="FuelDepotWest" type="Marker3D" parent="Landmarks" unique_id=1665741328]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 0, 0)
+
+[node name="GasStation" type="Marker3D" parent="Landmarks" unique_id=1771696663]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, -5)

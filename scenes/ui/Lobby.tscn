@@ -1,0 +1,107 @@
+[gd_scene format=3 uid="uid://birsfmid1832t"]
+
+[ext_resource type="Script" uid="uid://bojxex8oe71ye" path="res://scripts/ui/lobby.gd" id="1_lobby"]
+
+[sub_resource type="StyleBoxFlat" id="sb_panel"]
+content_margin_left = 30.0
+content_margin_top = 30.0
+content_margin_right = 30.0
+content_margin_bottom = 30.0
+bg_color = Color(0.08, 0.07, 0.06, 0.9)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="sb_btn"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.75, 0.35, 0.15, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="Lobby" type="Control" unique_id=580712551]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_lobby")
+
+[node name="BG" type="ColorRect" parent="." unique_id=595642327]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.12, 0.1, 0.08, 1)
+
+[node name="Center" type="PanelContainer" parent="." unique_id=2057996153]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -220.0
+offset_right = 250.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("sb_panel")
+
+[node name="VBox" type="VBoxContainer" parent="Center" unique_id=903619976]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Center/VBox" unique_id=31750262]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "LOBBY"
+horizontal_alignment = 1
+
+[node name="CodeLabel" type="Label" parent="Center/VBox" unique_id=1789511733]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.5, 1)
+theme_override_font_sizes/font_size = 20
+text = "INVITE CODE: DD-XXXX"
+horizontal_alignment = 1
+
+[node name="Sep" type="HSeparator" parent="Center/VBox" unique_id=207892929]
+layout_mode = 2
+
+[node name="PlayersLabel" type="Label" parent="Center/VBox" unique_id=80943084]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "PLAYERS"
+
+[node name="PlayerList" type="VBoxContainer" parent="Center/VBox" unique_id=1601019620]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ButtonRow" type="HBoxContainer" parent="Center/VBox" unique_id=935126344]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="ReadyButton" type="Button" parent="Center/VBox/ButtonRow" unique_id=871061523]
+layout_mode = 2
+theme_override_styles/normal = SubResource("sb_btn")
+text = "READY"
+
+[node name="StartButton" type="Button" parent="Center/VBox/ButtonRow" unique_id=1320215209]
+layout_mode = 2
+theme_override_styles/normal = SubResource("sb_btn")
+text = "START GAME"
+
+[node name="BackButton" type="Button" parent="Center/VBox" unique_id=1406598220]
+layout_mode = 2
+text = "← BACK"

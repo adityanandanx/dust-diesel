@@ -1,0 +1,21 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/game_manager.gd" id="1_gm"]
+[ext_resource type="PackedScene" path="res://scenes/game/Boneyard.tscn" id="2_map"]
+[ext_resource type="PackedScene" path="res://scenes/game/SpawnPoints.tscn" id="3_sp"]
+[ext_resource type="PackedScene" path="res://scenes/ui/HUD.tscn" id="4_hud"]
+
+[node name="Game" type="Node3D"]
+script = ExtResource("1_gm")
+
+[node name="Boneyard" parent="." instance=ExtResource("2_map")]
+
+[node name="SpawnPoints" parent="." instance=ExtResource("3_sp")]
+
+[node name="Cars" type="Node3D" parent="."]
+
+[node name="Wrecks" type="Node3D" parent="."]
+
+[node name="HUDLayer" type="CanvasLayer" parent="."]
+
+[node name="HUD" parent="HUDLayer" instance=ExtResource("4_hud")]
