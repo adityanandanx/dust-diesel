@@ -24,10 +24,14 @@ func get_by_id(id: String):
 	if id in _vehicles:
 		return _vehicles[id]
 	# Fallback to first vehicle
+	if _ordered.is_empty():
+		return null
 	return _ordered[0]
 
 
 func get_random():
+	if _ordered.is_empty():
+		return null
 	return _ordered[randi() % _ordered.size()]
 
 
@@ -177,7 +181,7 @@ func _apply_ui_stats(raw_stats: Array[Dictionary]) -> void:
 		max_weight = maxf(max_weight, weight_value)
 
 	for i in range(_ordered.size()):
-		var data = _ordered[i]
+		var data: VehicleData = _ordered[i]
 		var stats := raw_stats[i]
 		data.ui_speed = _normalize_to_ui(_float_or(stats.get("speed"), 0.0), min_speed, max_speed)
 		data.ui_armor = _normalize_to_ui(_float_or(stats.get("armor"), 0.0), min_armor, max_armor)
