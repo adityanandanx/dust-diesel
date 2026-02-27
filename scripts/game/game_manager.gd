@@ -9,6 +9,7 @@ signal match_ended(winner_name: String)
 const WreckScene := preload("res://scenes/vehicles/CarWreck.tscn")
 const WeaponScene := preload("res://scenes/weapons/ScrapCannon.tscn")
 const WeaponScene2 := preload("res://scenes/weapons/MineLayer.tscn")
+const DefaultSpawnPointsScene := preload("res://scenes/game/SpawnPoints.tscn")
 
 # Must match the order in weapon_pickup.gd _weapon_scenes
 var WEAPON_SCENES: Array[PackedScene] = [
@@ -21,26 +22,75 @@ var WEAPON_SCENES: Array[PackedScene] = [
 	preload("res://scenes/weapons/EMPBlaster.tscn"),
 ]
 
-@onready var spawn_points: Node3D = $SpawnPoints
 @onready var cars_container: Node3D = $Cars
 @onready var wrecks_container: Node3D = $Wrecks
 @onready var hud: Control = $HUDLayer/HUD
 @onready var top_down_camera: Camera3D = $TopDownCamera
+@onready var pickup_spawner: Node3D = $PickupSpawner
 
 var alive_cars: Array[Car] = []
 var kill_feed: Array[Dictionary] = [] # {victim, killer, cause, time}
 var connected_cars: Dictionary = {}
+var spawn_points: Node3D = null
+var _active_map_root: Node3D = null
 
 
 func _ready() -> void:
+	_load_selected_map()
 	if NakamaManager.current_match:
 		_spawn_networked_players()
 	else:
 		_spawn_players()
 
 
+func _load_selected_map() -> void:
+	var map_registry: Node = get_node_or_null("/root/MapRegistry")
+	if map_registry == null:
+		return
+
+	var map_id := "boneyard"
+	if NakamaManager.current_match:
+		map_id = NakamaManager.selected_map
+
+	if not map_registry.has_id(map_id):
+		map_id = "boneyard"
+		NakamaManager.selected_map = map_id
+
+	var map_data = map_registry.get_by_id(map_id)
+	var map_scene: PackedScene = load(map_data.scene_path)
+	if map_scene == null:
+		map_scene = load("res://scenes/game/Boneyard.tscn")
+		NakamaManager.selected_map = "boneyard"
+
+	var map_instance: Node3D = map_scene.instantiate()
+	map_instance.name = "Map"
+	add_child(map_instance)
+	move_child(map_instance, 0)
+	_active_map_root = map_instance
+
+	spawn_points = map_instance.get_node_or_null("SpawnPoints")
+	if spawn_points == null:
+		spawn_points = DefaultSpawnPointsScene.instantiate()
+		spawn_points.name = "SpawnPoints"
+		add_child(spawn_points)
+
+	if pickup_spawner and pickup_spawner.has_method("set_spawn_positions"):
+		var pickup_points_root: Node3D = map_instance.get_node_or_null("PickupPoints")
+		if pickup_points_root != null:
+			var positions: Array[Vector3] = []
+			for child in pickup_points_root.get_children():
+				if child is Marker3D:
+					positions.append(child.global_position)
+			if positions.size() > 0:
+				pickup_spawner.set_spawn_positions(positions)
+
+
 func _spawn_networked_players() -> void:
+	if spawn_points == null:
+		return
 	var points := spawn_points.get_children()
+	if points.is_empty():
+		return
 	var index := 0
 	
 	# Sort session IDs so everyone assigns the same spawn logic
@@ -167,7 +217,11 @@ func _on_player_left(sess_id: String) -> void:
 
 
 func _spawn_players() -> void:
+	if spawn_points == null:
+		return
 	var points := spawn_points.get_children()
+	if points.is_empty():
+		return
 	# For Phase 1: spawn 1 player car at first spawn point
 	# Read chosen vehicle from NakamaManager if available
 	var v_id = "sedan"

@@ -21,6 +21,7 @@ Nakama="*res://addons/com.heroiclabs.nakama/Nakama.gd"
 NakamaManager="*res://scripts/network/nakama_manager.gd"
 GameState="*res://scripts/autoloads/GameState.gd"
 VehicleRegistry="*res://scripts/car/vehicle_registry.gd"
+MapRegistry="*res://scripts/game/map_registry.gd"
 
 [input]
 

@@ -34,6 +34,12 @@ var _spawn_positions: Array[Vector3] = [
 ]
 
 
+func set_spawn_positions(positions: Array[Vector3]) -> void:
+	if positions.is_empty():
+		return
+	_spawn_positions = positions.duplicate()
+
+
 func _ready() -> void:
 	if NakamaManager.current_match:
 		NakamaManager.socket.received_match_state.connect(_on_remote_match_state)

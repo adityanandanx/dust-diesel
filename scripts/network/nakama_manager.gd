@@ -7,6 +7,7 @@ signal match_joined(match_id: String)
 signal player_joined(session_id: String, user_id: String, username: String)
 signal player_left(session_id: String)
 signal game_started
+signal map_selected(map_id: String)
 
 var client: NakamaClient
 var session: NakamaSession
@@ -14,6 +15,7 @@ var socket: NakamaSocket
 var current_match: NakamaRTAPI.Match
 var match_name: String = ""
 var is_host: bool = false
+var selected_map: String = "boneyard"
 
 enum OpCodes {
 	POSITION_SYNC = 1,
@@ -25,7 +27,8 @@ enum OpCodes {
 	ENV_DAMAGE = 7,
 	WEAPON_EQUIP = 8,
 	PLAYER_DEATH = 9,
-	VEHICLE_SELECT = 10
+	VEHICLE_SELECT = 10,
+	MAP_SELECT = 11
 }
 
 # Dictionary of session_id to user data
@@ -108,6 +111,8 @@ func create_match(p_match_name: String = "") -> void:
 		
 	current_match = new_match
 	connected_players.clear()
+	is_host = true
+	selected_map = "boneyard"
 	
 	# Generate a short invite code and store the mapping
 	var code := _generate_short_code()
@@ -180,6 +185,8 @@ func join_match(code: String) -> void:
 	current_match = joined_match
 	match_name = code
 	connected_players.clear()
+	is_host = false
+	selected_map = "boneyard"
 	
 	_add_player(session.user_id, session.username, current_match.self_user.session_id)
 	
@@ -196,6 +203,7 @@ func leave_match() -> void:
 		current_match = null
 		match_name = ""
 		is_host = false
+		selected_map = "boneyard"
 		connected_players.clear()
 
 
@@ -213,6 +221,8 @@ func _on_match_presence(p_presence: NakamaRTAPI.MatchPresenceEvent) -> void:
 	# Late-join sync: when a new player appears, resend our current vehicle selection.
 	if saw_new_remote_join:
 		_broadcast_my_vehicle_selection()
+		if is_host:
+			_broadcast_selected_map()
 			
 	for p in p_presence.leaves:
 		if p.session_id in connected_players:
@@ -231,6 +241,11 @@ func _on_match_state(match_state: NakamaRTAPI.MatchData) -> void:
 			var sess_id: String = data["session_id"]
 			if sess_id in connected_players:
 				connected_players[sess_id]["selected_vehicle"] = data["vehicle_id"]
+	elif match_state.op_code == OpCodes.MAP_SELECT:
+		var data: Dictionary = JSON.parse_string(match_state.data)
+		if data and "map_id" in data:
+			selected_map = str(data["map_id"])
+			map_selected.emit(selected_map)
 
 
 func _add_player(user_id: String, username: String, sess_id: String) -> void:
@@ -263,6 +278,15 @@ func _broadcast_my_vehicle_selection() -> void:
 		"vehicle_id": vehicle_id,
 	})
 	send_match_state(OpCodes.VEHICLE_SELECT, payload)
+
+
+func _broadcast_selected_map() -> void:
+	if not current_match:
+		return
+	var payload := JSON.stringify({
+		"map_id": selected_map,
+	})
+	send_match_state(OpCodes.MAP_SELECT, payload)
 
 
 func _generate_short_code() -> String:

@@ -1,19 +1,12 @@
 [gd_scene format=3 uid="uid://d1bipawlc4yrx"]
 
 [ext_resource type="Script" uid="uid://bmfmglaouyef1" path="res://scripts/game/game_manager.gd" id="1_gm"]
-[ext_resource type="PackedScene" uid="uid://cyattlw2wa6v7" path="res://scenes/game/Boneyard.tscn" id="2_map"]
-[ext_resource type="PackedScene" path="res://scenes/game/SpawnPoints.tscn" id="3_sp"]
 [ext_resource type="PackedScene" uid="uid://cl3nsdq7vvkhf" path="res://scenes/ui/HUD.tscn" id="4_hud"]
 [ext_resource type="Script" uid="uid://cajyejhovrbpr" path="res://scripts/pickups/pickup_spawner.gd" id="5_spawner"]
 [ext_resource type="Script" uid="uid://b1w3l3qwuykxd" path="res://scripts/car/car_camera.gd" id="6_cam"]
 
 [node name="Game" type="Node3D" unique_id=834326654]
 script = ExtResource("1_gm")
-
-[node name="Boneyard" parent="." unique_id=1846210333 instance=ExtResource("2_map")]
-
-[node name="SpawnPoints" parent="." unique_id=71846995 instance=ExtResource("3_sp")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 14.607107, 0)
 
 [node name="Cars" type="Node3D" parent="." unique_id=496895858]
 
@@ -29,4 +22,4 @@ script = ExtResource("5_spawner")
 [node name="TopDownCamera" type="Camera3D" parent="." unique_id=241321802]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 20, 12)
 script = ExtResource("6_cam")
-offset = Vector3(4.575, 8.48, -7.235)
+offset = Vector3(0, 3.58, -6.455)
