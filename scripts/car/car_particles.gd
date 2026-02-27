@@ -223,13 +223,13 @@ func _get_best_contact_data() -> Dictionary:
 	if car.get_contact_count() <= 0 or not car.has_method("get_contact_local_position"):
 		return {
 			"position": fallback_pos,
-			"trail_direction": -car.linear_velocity.normalized() if car.linear_velocity.length() > 0.01 else -car.global_basis.z,
+			"trail_direction": - car.linear_velocity.normalized() if car.linear_velocity.length() > 0.01 else -car.global_basis.z,
 			"relative_speed": car.linear_velocity.length()
 		}
 
 	var best: Dictionary = {
 		"position": fallback_pos,
-		"trail_direction": -car.global_basis.z,
+		"trail_direction": - car.global_basis.z,
 		"relative_speed": 0.0
 	}
 	var best_score: float = -1.0
@@ -253,9 +253,9 @@ func _get_best_contact_data() -> Dictionary:
 		var tangential_velocity: Vector3 = relative_velocity - world_normal * relative_velocity.dot(world_normal)
 		var tangential_speed: float = tangential_velocity.length()
 
-		var base_trail: Vector3 = -tangential_velocity.normalized() if tangential_speed > 0.1 else -car.linear_velocity.normalized()
+		var base_trail: Vector3 = - tangential_velocity.normalized() if tangential_speed > 0.1 else -car.linear_velocity.normalized()
 		if base_trail.length() < 0.01:
-			base_trail = -car.global_basis.z
+			base_trail = - car.global_basis.z
 
 		var directional: Vector3 = (
 			base_trail
