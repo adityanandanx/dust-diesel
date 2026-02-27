@@ -1,0 +1,140 @@
+[gd_scene format=3 uid="uid://b5h8fseakav36"]
+
+[ext_resource type="Script" uid="uid://dmkjmiy00yal4" path="res://scripts/particles/explosion_effect.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://183skkq1aoe" path="res://assets/sprites/kenny_smoke/Explosion/explosion00.png" id="2_fire_tex"]
+[ext_resource type="Texture2D" uid="uid://beui7xp0kq26k" path="res://assets/sprites/kenny_smoke/Black smoke/blackSmoke00.png" id="3_smoke_tex"]
+[ext_resource type="Texture2D" uid="uid://c4nbprq63rdg8" path="res://assets/sprites/kenny_smoke/Flash/flash00.png" id="4_flash_tex"]
+
+[sub_resource type="Curve" id="Curve_fire_alpha"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.4, 0.9), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_fire_alpha"]
+curve = SubResource("Curve_fire_alpha")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_fire"]
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 4.0
+initial_velocity_max = 8.0
+gravity = Vector3(0, -2, 0)
+damping_min = 3.0
+damping_max = 5.0
+scale_max = 3.0
+color = Color(1, 0.5, 0.1, 1)
+alpha_curve = SubResource("CurveTexture_fire_alpha")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fire"]
+transparency = 4
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("2_fire_tex")
+billboard_mode = 1
+
+[sub_resource type="QuadMesh" id="QuadMesh_fire"]
+material = SubResource("StandardMaterial3D_fire")
+size = Vector2(3, 3)
+
+[sub_resource type="Curve" id="Curve_smoke_alpha"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.1, 0.8), 0.0, 0.0, 0, 0, Vector2(0.5, 0.6), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="CurveTexture" id="CurveTexture_smoke_alpha"]
+curve = SubResource("Curve_smoke_alpha")
+
+[sub_resource type="Curve" id="Curve_smoke_scale"]
+_data = [Vector2(0, 0.5), 0.0, 0.0, 0, 0, Vector2(0.5, 1), 0.0, 0.0, 0, 0, Vector2(1, 1.5), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_smoke_scale"]
+curve = SubResource("Curve_smoke_scale")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_smoke"]
+direction = Vector3(0, 1, 0)
+spread = 120.0
+initial_velocity_min = 2.0
+initial_velocity_max = 4.0
+gravity = Vector3(0, 0.5, 0)
+damping_min = 1.0
+damping_max = 2.0
+scale_min = 2.0
+scale_max = 5.0
+scale_curve = SubResource("CurveTexture_smoke_scale")
+color = Color(0.2, 0.2, 0.2, 0.8)
+alpha_curve = SubResource("CurveTexture_smoke_alpha")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_smoke"]
+transparency = 4
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("3_smoke_tex")
+billboard_mode = 1
+
+[sub_resource type="QuadMesh" id="QuadMesh_smoke"]
+material = SubResource("StandardMaterial3D_smoke")
+size = Vector2(4, 4)
+
+[sub_resource type="Curve" id="Curve_flash_alpha"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.3, 0.5), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_flash_alpha"]
+curve = SubResource("Curve_flash_alpha")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_flash"]
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 0.5
+initial_velocity_max = 1.5
+scale_min = 4.0
+scale_max = 8.0
+color = Color(1, 0.9, 0.6, 1)
+alpha_curve = SubResource("CurveTexture_flash_alpha")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_flash"]
+transparency = 4
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_color = Color(1, 0.9, 0.6, 1)
+albedo_texture = ExtResource("4_flash_tex")
+billboard_mode = 1
+
+[sub_resource type="QuadMesh" id="QuadMesh_flash"]
+material = SubResource("StandardMaterial3D_flash")
+size = Vector2(6, 6)
+
+[node name="Explosion" type="Node3D" unique_id=714740005]
+script = ExtResource("1_script")
+
+[node name="FireBurst" type="GPUParticles3D" parent="." unique_id=1782599238]
+emitting = false
+amount = 12
+lifetime = 0.6
+one_shot = true
+explosiveness = 0.9
+randomness = 0.4
+visibility_aabb = AABB(-10, -5, -10, 20, 15, 20)
+process_material = SubResource("ParticleProcessMaterial_fire")
+draw_pass_1 = SubResource("QuadMesh_fire")
+
+[node name="SmokeCloud" type="GPUParticles3D" parent="." unique_id=512306556]
+emitting = false
+amount = 15
+lifetime = 2.0
+one_shot = true
+explosiveness = 0.7
+randomness = 0.5
+visibility_aabb = AABB(-10, -5, -10, 20, 15, 20)
+process_material = SubResource("ParticleProcessMaterial_smoke")
+draw_pass_1 = SubResource("QuadMesh_smoke")
+
+[node name="Flash" type="GPUParticles3D" parent="." unique_id=269405129]
+emitting = false
+amount = 3
+lifetime = 0.15
+one_shot = true
+explosiveness = 1.0
+randomness = 0.2
+visibility_aabb = AABB(-10, -5, -10, 20, 15, 20)
+process_material = SubResource("ParticleProcessMaterial_flash")
+draw_pass_1 = SubResource("QuadMesh_flash")

@@ -1,100 +1,38 @@
 [gd_scene format=3 uid="uid://cdutdv2hiisr7"]
 
-[ext_resource type="Script" uid="uid://dpjskd2r5n121" path="res://scripts/car/car_drift.gd" id="2_60c51"]
-[ext_resource type="Script" uid="uid://bmdglrejhr7d8" path="res://scripts/car/car_fuel.gd" id="3_xt7rl"]
-[ext_resource type="Script" uid="uid://bkhv4rh2p3546" path="res://scripts/car/car_debug_label.gd" id="4_1j17a"]
-[ext_resource type="PackedScene" uid="uid://bwmcgy5msgfgw" path="res://assets/models/cars/truck.glb" id="5_gue1b"]
-[ext_resource type="Script" uid="uid://bmc4ls0cm2puy" path="res://scripts/car/car_controller.gd" id="car_ctrl"]
-[ext_resource type="Script" uid="uid://bu0i2u81i0o6c" path="res://scripts/car/car_damage.gd" id="car_dmg"]
-[ext_resource type="Script" uid="uid://dipfvvcl608ow" path="res://scripts/network/network_sync.gd" id="net_sync"]
-
-[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_tn0jf"]
-friction = 0.22
+[ext_resource type="PackedScene" uid="uid://cm3bvefqxdra4" path="res://scenes/vehicles/CarBase.tscn" id="1_base"]
+[ext_resource type="PackedScene" uid="uid://bwmcgy5msgfgw" path="res://assets/models/cars/truck.glb" id="2_model"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_body"]
 size = Vector3(1.3024902, 0.9099609, 2.828247)
 
-[node name="Truck" type="VehicleBody3D" unique_id=1902546355]
-mass = 1200.0
-physics_material_override = SubResource("PhysicsMaterial_tn0jf")
-center_of_mass_mode = 1
+[node name="Truck" instance=ExtResource("1_base")]
 center_of_mass = Vector3(0, 0, -0.1)
-script = ExtResource("car_ctrl")
 
-[node name="BodyCollision" type="CollisionShape3D" parent="." unique_id=410720277]
+[node name="BodyCollision" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.66201174, -0.027282715)
 shape = SubResource("BoxShape3D_body")
 
-[node name="FrontLeft" type="VehicleWheel3D" parent="." unique_id=599088781]
+[node name="FrontLeft" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.424, 0.3, 0.86)
+use_as_traction = false
 use_as_steering = true
 wheel_radius = 0.3
-wheel_friction_slip = 3.0
-suspension_stiffness = 40.0
-damping_compression = 2.0
-damping_relaxation = 3.0
 
-[node name="WheelMesh_DELETE" type="Node3D" parent="FrontLeft" unique_id=1717730084]
-
-[node name="WheelMesh" type="Node3D" parent="FrontLeft" unique_id=52153353]
-
-[node name="FrontRight" type="VehicleWheel3D" parent="." unique_id=1574134002]
+[node name="FrontRight" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.42357332, 0.3, 0.86)
+use_as_traction = false
 use_as_steering = true
 wheel_radius = 0.3
-wheel_friction_slip = 3.0
-suspension_stiffness = 40.0
-damping_compression = 2.0
-damping_relaxation = 3.0
 
-[node name="WheelMesh_DELETE" type="Node3D" parent="FrontRight" unique_id=1793121830]
-
-[node name="WheelMesh" type="Node3D" parent="FrontRight" unique_id=618123310]
-
-[node name="RearLeft" type="VehicleWheel3D" parent="." unique_id=418457703]
+[node name="RearLeft" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.424, 0.3, -0.76)
-use_as_traction = true
+use_as_steering = false
 wheel_radius = 0.3
-wheel_friction_slip = 3.0
-suspension_stiffness = 40.0
-damping_compression = 2.0
-damping_relaxation = 3.0
 
-[node name="WheelMesh_DELETE" type="Node3D" parent="RearLeft" unique_id=1257224440]
-
-[node name="WheelMesh" type="Node3D" parent="RearLeft" unique_id=1672632198]
-
-[node name="RearRight" type="VehicleWheel3D" parent="." unique_id=676060906]
+[node name="RearRight" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.42357332, 0.3, -0.76)
-use_as_traction = true
+use_as_steering = false
 wheel_radius = 0.3
-wheel_friction_slip = 3.0
-suspension_stiffness = 40.0
-damping_compression = 2.0
-damping_relaxation = 3.0
 
-[node name="WheelMesh_DELETE" type="Node3D" parent="RearRight" unique_id=545535150]
-
-[node name="WheelMesh" type="Node3D" parent="RearRight" unique_id=202585211]
-
-[node name="DriftSystem" type="Node" parent="." unique_id=263138991]
-script = ExtResource("2_60c51")
-
-[node name="FuelSystem" type="Node" parent="." unique_id=816409599]
-script = ExtResource("3_xt7rl")
-
-[node name="DamageSystem" type="Node" parent="." unique_id=166317889]
-script = ExtResource("car_dmg")
-
-[node name="WeaponMount" type="Node3D" parent="." unique_id=475629504]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 1.5)
-
-[node name="NetworkSync" type="Node" parent="." unique_id=1872429279]
-script = ExtResource("net_sync")
-
-[node name="DebugLabel" type="Label3D" parent="." unique_id=62709717]
-pixel_size = 0.0145
-billboard = 1
-script = ExtResource("4_1j17a")
-
-[node name="Visuals" parent="." unique_id=1672298280 instance=ExtResource("5_gue1b")]
+[node name="Visuals" parent="." instance=ExtResource("2_model")]

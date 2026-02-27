@@ -203,10 +203,16 @@ func _on_match_presence(p_presence: NakamaRTAPI.MatchPresenceEvent) -> void:
 	if not current_match or p_presence.match_id != current_match.match_id:
 		return
 		
+	var saw_new_remote_join: bool = false
 	for p in p_presence.joins:
 		# Don't re-add ourselves if the server bounces our join event back
 		if p.session_id != current_match.self_user.session_id:
 			_add_player(p.user_id, p.username, p.session_id)
+			saw_new_remote_join = true
+
+	# Late-join sync: when a new player appears, resend our current vehicle selection.
+	if saw_new_remote_join:
+		_broadcast_my_vehicle_selection()
 			
 	for p in p_presence.leaves:
 		if p.session_id in connected_players:
@@ -243,6 +249,20 @@ func send_match_state(op_code: int, data: String) -> void:
 	if not current_match or not socket:
 		return
 	socket.send_match_state_async(current_match.match_id, op_code, data)
+
+
+func _broadcast_my_vehicle_selection() -> void:
+	if not current_match:
+		return
+	var my_sess_id: String = current_match.self_user.session_id
+	if not (my_sess_id in connected_players):
+		return
+	var vehicle_id: String = connected_players[my_sess_id].get("selected_vehicle", "sedan")
+	var payload := JSON.stringify({
+		"session_id": my_sess_id,
+		"vehicle_id": vehicle_id,
+	})
+	send_match_state(OpCodes.VEHICLE_SELECT, payload)
 
 
 func _generate_short_code() -> String:

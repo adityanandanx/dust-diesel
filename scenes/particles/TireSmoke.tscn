@@ -1,0 +1,62 @@
+[gd_scene format=3 uid="uid://djt8xsp7464h2"]
+
+[ext_resource type="Script" uid="uid://cvfwfteitrek7" path="res://scripts/particles/tire_smoke.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://cmmtycc122kre" path="res://assets/sprites/kenny_smoke/White puff/whitePuff00.png" id="2_tex"]
+
+[sub_resource type="Curve" id="Curve_alpha"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.5, 0.8), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_alpha"]
+curve = SubResource("Curve_alpha")
+
+[sub_resource type="Gradient" id="Gradient_56v8g"]
+colors = PackedColorArray(0, 0, 0, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_d1n4g"]
+gradient = SubResource("Gradient_56v8g")
+
+[sub_resource type="Curve" id="Curve_56v8g"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_d1n4g"]
+curve = SubResource("Curve_56v8g")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_tire"]
+direction = Vector3(0, 1, 0)
+spread = 40.0
+initial_velocity_min = 1.1
+initial_velocity_max = 2.2
+gravity = Vector3(0, 0.3, 0)
+damping_min = 1.0
+damping_max = 2.5
+scale_min = 0.0
+scale_max = 0.59999996
+scale_curve = SubResource("CurveTexture_d1n4g")
+color = Color(0.8, 0.8, 0.8, 0.49019608)
+color_ramp = SubResource("GradientTexture1D_d1n4g")
+alpha_curve = SubResource("CurveTexture_alpha")
+turbulence_enabled = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tire"]
+transparency = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("2_tex")
+billboard_mode = 1
+billboard_keep_scale = true
+
+[sub_resource type="QuadMesh" id="QuadMesh_tire"]
+material = SubResource("StandardMaterial3D_tire")
+flip_faces = true
+size = Vector2(2.1, 2.1)
+
+[node name="TireSmoke" type="GPUParticles3D" unique_id=722240247]
+amount = 22
+lifetime = 1.1
+randomness = 0.5
+visibility_aabb = AABB(-5, -2, -5, 10, 8, 10)
+process_material = SubResource("ParticleProcessMaterial_tire")
+draw_pass_1 = SubResource("QuadMesh_tire")
+script = ExtResource("1_script")

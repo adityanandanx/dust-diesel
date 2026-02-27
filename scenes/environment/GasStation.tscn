@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://ditqmn7g6083s"]
 
 [ext_resource type="Script" uid="uid://bhedjl535uywm" path="res://scripts/environment/gas_station.gd" id="1_gs"]
+[ext_resource type="PackedScene" path="res://scenes/particles/Explosion.tscn" id="2_explosion"]
 
 [sub_resource type="BoxShape3D" id="BoxShape_canopy"]
 size = Vector3(12, 0.5, 8)
@@ -21,6 +22,7 @@ size = Vector3(1, 3, 1.5)
 
 [node name="GasStation" type="RigidBody3D" unique_id=2094648434]
 script = ExtResource("1_gs")
+explosion_scene = ExtResource("2_explosion")
 
 [node name="CollisionCanopy" type="CollisionShape3D" parent="." unique_id=423414136]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.25, 0)

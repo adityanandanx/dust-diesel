@@ -1,0 +1,46 @@
+[gd_scene format=3 uid="uid://du8klyxo3878q"]
+
+[ext_resource type="Script" uid="uid://c8wc6s33bmo5l" path="res://scripts/particles/pickup_effect.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://c4nbprq63rdg8" path="res://assets/sprites/kenny_smoke/Flash/flash00.png" id="2_tex"]
+
+[sub_resource type="Curve" id="Curve_alpha"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.5, 0.8), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_alpha"]
+curve = SubResource("Curve_alpha")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_pickup"]
+direction = Vector3(0, 1, 0)
+spread = 40.0
+initial_velocity_min = 1.8
+initial_velocity_max = 3.0
+gravity = Vector3(0, -1, 0)
+damping_min = 1.0
+damping_max = 2.0
+scale_min = 0.5
+scale_max = 1.2
+color = Color(1, 0.85, 0.2, 1)
+alpha_curve = SubResource("CurveTexture_alpha")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pickup"]
+transparency = 4
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("2_tex")
+billboard_mode = 1
+
+[sub_resource type="QuadMesh" id="QuadMesh_pickup"]
+material = SubResource("StandardMaterial3D_pickup")
+
+[node name="PickupEffect" type="GPUParticles3D" unique_id=1092903974]
+emitting = false
+amount = 12
+lifetime = 0.6
+one_shot = true
+explosiveness = 0.95
+randomness = 0.3
+visibility_aabb = AABB(-5, -2, -5, 10, 10, 10)
+process_material = SubResource("ParticleProcessMaterial_pickup")
+draw_pass_1 = SubResource("QuadMesh_pickup")
+script = ExtResource("1_script")

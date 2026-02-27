@@ -1,12 +1,16 @@
-[gd_scene format=3 uid="uid://cm3bvefqxdra4"]
+[gd_scene format=3 uid="uid://bfkgf5b4quwip"]
 
 [ext_resource type="Script" uid="uid://bmc4ls0cm2puy" path="res://scripts/car/car_controller.gd" id="1_ctrl"]
 [ext_resource type="Script" uid="uid://dpjskd2r5n121" path="res://scripts/car/car_drift.gd" id="2_drift"]
 [ext_resource type="Script" uid="uid://bmdglrejhr7d8" path="res://scripts/car/car_fuel.gd" id="3_fuel"]
 [ext_resource type="Script" uid="uid://bu0i2u81i0o6c" path="res://scripts/car/car_damage.gd" id="4_dmg"]
-[ext_resource type="Script" uid="uid://b1w3l3qwuykxd" path="res://scripts/car/car_camera.gd" id="5_cam"]
 [ext_resource type="Script" uid="uid://dipfvvcl608ow" path="res://scripts/network/network_sync.gd" id="6_net"]
 [ext_resource type="Script" uid="uid://bkhv4rh2p3546" path="res://scripts/car/car_debug_label.gd" id="7_dbg"]
+[ext_resource type="Script" uid="uid://dmrtscrs86e71" path="res://scripts/car/car_particles.gd" id="8_particles"]
+[ext_resource type="PackedScene" path="res://scenes/particles/TireSmoke.tscn" id="9_tire_smoke"]
+[ext_resource type="PackedScene" path="res://scenes/particles/DriftSmoke.tscn" id="10_drift_smoke"]
+[ext_resource type="PackedScene" path="res://scenes/particles/CollisionSparks.tscn" id="11_sparks"]
+[ext_resource type="PackedScene" path="res://scenes/particles/Explosion.tscn" id="12_explosion"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_tn0jf"]
 friction = 0.22
@@ -18,9 +22,7 @@ size = Vector3(1.8, 0.8, 4)
 mass = 1200.0
 physics_material_override = SubResource("PhysicsMaterial_tn0jf")
 center_of_mass_mode = 1
-center_of_mass = Vector3(0, -0.3, 0)
 script = ExtResource("1_ctrl")
-steer_return_speed = 20.17
 
 [node name="BodyCollision" type="CollisionShape3D" parent="." unique_id=410720277]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.70000005, 0)
@@ -91,3 +93,10 @@ script = ExtResource("6_net")
 pixel_size = 0.0145
 billboard = 1
 script = ExtResource("7_dbg")
+
+[node name="ParticleSystem" type="Node" parent="." unique_id=187606830]
+script = ExtResource("8_particles")
+tire_smoke_scene = ExtResource("9_tire_smoke")
+drift_smoke_scene = ExtResource("10_drift_smoke")
+collision_sparks_scene = ExtResource("11_sparks")
+explosion_scene = ExtResource("12_explosion")

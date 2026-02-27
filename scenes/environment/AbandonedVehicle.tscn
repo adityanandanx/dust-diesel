@@ -1,6 +1,7 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/environment/abandoned_vehicle.gd" id="1_av"]
+[ext_resource type="PackedScene" path="res://scenes/particles/Explosion.tscn" id="2_explosion"]
 
 [sub_resource type="BoxShape3D" id="BoxShape_car"]
 size = Vector3(2.0, 1.2, 4.0)
@@ -15,6 +16,7 @@ roughness = 0.5
 
 [node name="AbandonedVehicle" type="RigidBody3D"]
 script = ExtResource("1_av")
+explosion_scene = ExtResource("2_explosion")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)

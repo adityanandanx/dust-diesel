@@ -2,6 +2,8 @@ extends DestructibleBase
 
 ## Watchtower — tall structure, collapses into physics debris on destroy.
 
+@export var explosion_scene: PackedScene
+
 
 func _ready() -> void:
 	super._ready()
@@ -18,6 +20,16 @@ func _ready() -> void:
 
 
 func _on_destroyed() -> void:
+	# Spawn dust/collapse explosion at base
+	if explosion_scene:
+		var fx: Node3D = explosion_scene.instantiate()
+		get_tree().current_scene.add_child(fx)
+		fx.global_position = global_position + Vector3(0, 1.0, 0)
+		if fx.has_method("set_scale_factor"):
+			fx.set_scale_factor(0.5)
+		if fx.has_method("explode"):
+			fx.explode()
+
 	# Spawn falling debris chunks
 	for i in 4:
 		var debris := RigidBody3D.new()

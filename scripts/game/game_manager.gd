@@ -93,14 +93,13 @@ func _on_remote_match_state(match_state: NakamaRTAPI.MatchData) -> void:
 		if sess_id == NakamaManager.current_match.self_user.session_id:
 			return # It's us, already fired locally
 			
-		if sess_id in connected_cars:
-			var car: Car = connected_cars[sess_id]
-			if is_instance_valid(car):
-				var slot := int(data["slot"])
-				if slot == 0 and car.primary_weapon:
-					car.primary_weapon._do_fire()
-				elif slot == 1 and car.secondary_weapon:
-					car.secondary_weapon._do_fire()
+		var car: Car = _get_live_connected_car(sess_id)
+		if car:
+			var slot := int(data["slot"])
+			if slot == 0 and car.primary_weapon:
+				car.primary_weapon._do_fire()
+			elif slot == 1 and car.secondary_weapon:
+				car.secondary_weapon._do_fire()
 					
 	elif match_state.op_code == NakamaManager.OpCodes.DAMAGE_EVENT:
 		var data: Dictionary = JSON.parse_string(match_state.data)
@@ -113,11 +112,10 @@ func _on_remote_match_state(match_state: NakamaRTAPI.MatchData) -> void:
 		# car was hit. The broadcaster already applied it locally before sending.
 		# We skip only if we are the shooter (i.e. the sender) to avoid double-damage,
 		# but since Nakama relayed messages are NOT echoed back to the sender we are safe.
-		if target_id in connected_cars:
-			var car: Car = connected_cars[target_id]
-			if is_instance_valid(car) and car.has_node("DamageSystem"):
-				car.get_node("DamageSystem")._apply_damage_internal(
-					int(data["zone"]), float(data["amount"]))
+		var car: Car = _get_live_connected_car(target_id)
+		if car and car.has_node("DamageSystem"):
+			car.get_node("DamageSystem")._apply_damage_internal(
+				int(data["zone"]), float(data["amount"]))
 				
 	elif match_state.op_code == NakamaManager.OpCodes.ENV_DAMAGE:
 		var data: Dictionary = JSON.parse_string(match_state.data)
@@ -140,9 +138,9 @@ func _on_remote_match_state(match_state: NakamaRTAPI.MatchData) -> void:
 			return # Already equipped locally
 		
 		var weapon_idx := int(data["weapon_idx"])
-		if sess_id in connected_cars and weapon_idx >= 0 and weapon_idx < WEAPON_SCENES.size():
-			var car: Car = connected_cars[sess_id]
-			if is_instance_valid(car) and car.has_method("equip_weapon"):
+		if weapon_idx >= 0 and weapon_idx < WEAPON_SCENES.size():
+			var car: Car = _get_live_connected_car(sess_id)
+			if car and car.has_method("equip_weapon"):
 				var weapon = WEAPON_SCENES[weapon_idx].instantiate()
 				car.equip_weapon(weapon)
 	
@@ -156,18 +154,16 @@ func _on_remote_match_state(match_state: NakamaRTAPI.MatchData) -> void:
 			return # Already handled locally
 		
 		var cause: String = data.get("cause", "destroyed")
-		if sess_id in connected_cars:
-			var car: Car = connected_cars[sess_id]
-			if is_instance_valid(car):
-				_eliminate_car(car, cause)
+		var car: Car = _get_live_connected_car(sess_id)
+		if car:
+			_eliminate_car(car, cause)
 
 
 func _on_player_left(sess_id: String) -> void:
-	if sess_id in connected_cars:
-		var car: Car = connected_cars[sess_id]
-		if is_instance_valid(car):
-			_eliminate_car(car, "disconnected")
-		connected_cars.erase(sess_id)
+	var car: Car = _get_live_connected_car(sess_id)
+	if car:
+		_eliminate_car(car, "disconnected")
+	connected_cars.erase(sess_id)
 
 
 func _spawn_players() -> void:
@@ -220,6 +216,14 @@ func _on_car_stalled(car: Car) -> void:
 
 
 func _eliminate_car(car: Car, cause: String) -> void:
+	if not is_instance_valid(car):
+		return
+	if car.is_queued_for_deletion():
+		return
+	if not alive_cars.has(car):
+		# Already eliminated on this client.
+		return
+
 	# Broadcast death to remote players if this is our local car
 	if NakamaManager.current_match and car.is_player:
 		var data = {
@@ -244,12 +248,30 @@ func _eliminate_car(car: Car, cause: String) -> void:
 	# Remove the car
 	car.queue_free()
 
+	# Remove stale network mapping for this car.
+	if car.network_id != "":
+		connected_cars.erase(car.network_id)
+
 	# Check win condition
 	if alive_cars.size() <= 1 and alive_cars.size() > 0:
 		var winner: Car = alive_cars[0]
 		match_ended.emit(winner.name)
 	elif alive_cars.is_empty():
 		match_ended.emit("Nobody")
+
+
+func _get_live_connected_car(sess_id: String) -> Car:
+	if not (sess_id in connected_cars):
+		return null
+	var car_value: Variant = connected_cars[sess_id]
+	if not (car_value is Car):
+		connected_cars.erase(sess_id)
+		return null
+	var car: Car = car_value
+	if not is_instance_valid(car) or car.is_queued_for_deletion():
+		connected_cars.erase(sess_id)
+		return null
+	return car
 
 
 func _unhandled_input(event: InputEvent) -> void:

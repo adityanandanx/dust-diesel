@@ -6,6 +6,7 @@ extends Area3D
 @export var damage: float = 40.0
 @export var knockback_force: float = 8000.0
 @export var detection_radius: float = 3.0
+@export var explosion_scene: PackedScene
 
 var owner_car: Node = null
 var is_armed: bool = false
@@ -33,6 +34,16 @@ func _on_body_entered(body: Node3D) -> void:
 
 
 func _detonate(target: VehicleBody3D = null) -> void:
+	# Spawn explosion particles
+	if explosion_scene:
+		var fx: Node3D = explosion_scene.instantiate()
+		get_tree().current_scene.add_child(fx)
+		fx.global_position = global_position + Vector3(0, 0.3, 0)
+		if fx.has_method("set_scale_factor"):
+			fx.set_scale_factor(0.6)
+		if fx.has_method("explode"):
+			fx.explode()
+
 	# Direct damage to trigger target
 	if target and target.has_node("DamageSystem"):
 		var dmg = target.get_node("DamageSystem")

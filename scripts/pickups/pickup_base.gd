@@ -9,6 +9,8 @@ signal collected(car: Node)
 @export var bob_height: float = 0.3
 @export var bob_speed: float = 2.0
 @export var spin_speed: float = 1.5
+@export var pickup_effect_scene: PackedScene
+@export var pickup_effect_color: Color = Color(1.0, 0.85, 0.2, 1.0)
 
 var _age: float = 0.0
 var _start_y: float = 0.0
@@ -51,6 +53,7 @@ func _on_body_entered(body: Node3D) -> void:
 		
 		_is_collected = true
 		apply(body)
+		_spawn_pickup_effect()
 		collected.emit(body)
 		
 		if NakamaManager.current_match:
@@ -63,3 +66,15 @@ func _on_body_entered(body: Node3D) -> void:
 ## Override in subclasses to apply effect
 func apply(_car: VehicleBody3D) -> void:
 	pass
+
+
+func _spawn_pickup_effect() -> void:
+	if not pickup_effect_scene:
+		return
+	var fx: GPUParticles3D = pickup_effect_scene.instantiate()
+	get_tree().current_scene.add_child(fx)
+	fx.global_position = global_position
+	if "particle_color" in fx:
+		fx.particle_color = pickup_effect_color
+	if fx.has_method("play"):
+		fx.play()

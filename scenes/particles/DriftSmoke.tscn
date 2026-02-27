@@ -1,0 +1,58 @@
+[gd_scene format=3 uid="uid://dedcobajwmkht"]
+
+[ext_resource type="Script" uid="uid://cdvxn8lcbictv" path="res://scripts/particles/drift_smoke.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://beui7xp0kq26k" path="res://assets/sprites/kenny_smoke/Black smoke/blackSmoke00.png" id="2_tex"]
+
+[sub_resource type="Curve" id="Curve_alpha"]
+_data = [Vector2(0, 0.8), 0.0, 0.0, 0, 0, Vector2(0.3, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_alpha"]
+curve = SubResource("Curve_alpha")
+
+[sub_resource type="Curve" id="Curve_scale"]
+_data = [Vector2(0, 0.5), 0.0, 0.0, 0, 0, Vector2(0.5, 1), 0.0, 0.0, 0, 0, Vector2(1, 1.5), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_scale"]
+curve = SubResource("Curve_scale")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_drift"]
+direction = Vector3(0, 1, 0)
+spread = 50.0
+initial_velocity_min = 0.78
+initial_velocity_max = 2.6
+gravity = Vector3(0, 0.3, 0)
+damping_min = 1.0
+damping_max = 3.0
+scale_min = 1.6
+scale_max = 3.2
+scale_curve = SubResource("CurveTexture_scale")
+color = Color(0.28, 0.28, 0.28, 0.92)
+alpha_curve = SubResource("CurveTexture_alpha")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_drift"]
+transparency = 4
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("2_tex")
+disable_receive_shadows = true
+billboard_mode = 3
+billboard_keep_scale = true
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_drift"]
+material = SubResource("StandardMaterial3D_drift")
+flip_faces = true
+size = Vector2(2, 2)
+
+[node name="DriftSmoke" type="GPUParticles3D" unique_id=404563294]
+amount = 36
+lifetime = 1.8
+randomness = 0.6
+visibility_aabb = AABB(-8, -2, -8, 16, 10, 16)
+process_material = SubResource("ParticleProcessMaterial_drift")
+draw_pass_1 = SubResource("QuadMesh_drift")
+script = ExtResource("1_script")

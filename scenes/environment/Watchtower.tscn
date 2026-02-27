@@ -1,32 +1,41 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene format=3 uid="uid://bjrjtyoly251l"]
 
-[ext_resource type="Script" path="res://scripts/environment/watchtower.gd" id="1_wt"]
+[ext_resource type="Script" uid="uid://c8lxxqej7tm38" path="res://scripts/environment/watchtower.gd" id="1_wt"]
+[ext_resource type="PackedScene" path="res://scenes/particles/Explosion.tscn" id="2_explosion"]
 
 [sub_resource type="BoxShape3D" id="BoxShape_tower"]
-size = Vector3(2.0, 6.0, 2.0)
+size = Vector3(1.6, 5, 1.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ufukf"]
+size = Vector3(3, 0.5, 3)
 
 [sub_resource type="BoxMesh" id="BoxMesh_pillar"]
-size = Vector3(1.5, 5.0, 1.5)
-
-[sub_resource type="BoxMesh" id="BoxMesh_platform"]
-size = Vector3(3.0, 0.5, 3.0)
+size = Vector3(1.5, 5, 1.5)
 
 [sub_resource type="StandardMaterial3D" id="Mat_tower"]
 albedo_color = Color(0.4, 0.35, 0.3, 1)
 
-[node name="Watchtower" type="RigidBody3D"]
-script = ExtResource("1_wt")
+[sub_resource type="BoxMesh" id="BoxMesh_platform"]
+size = Vector3(3, 0.5, 3)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.0, 0)
+[node name="Watchtower" type="RigidBody3D" unique_id=110424778]
+script = ExtResource("1_wt")
+explosion_scene = ExtResource("2_explosion")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=884981578]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 shape = SubResource("BoxShape_tower")
 
-[node name="Pillar" type="MeshInstance3D" parent="."]
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="." unique_id=121004349]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.25, 0)
+shape = SubResource("BoxShape3D_ufukf")
+
+[node name="Pillar" type="MeshInstance3D" parent="." unique_id=865712031]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 mesh = SubResource("BoxMesh_pillar")
 surface_material_override/0 = SubResource("Mat_tower")
 
-[node name="Platform" type="MeshInstance3D" parent="."]
+[node name="Platform" type="MeshInstance3D" parent="." unique_id=1511514921]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.25, 0)
 mesh = SubResource("BoxMesh_platform")
 surface_material_override/0 = SubResource("Mat_tower")

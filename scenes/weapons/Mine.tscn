@@ -1,6 +1,7 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/weapons/mine.gd" id="1_mine"]
+[ext_resource type="PackedScene" path="res://scenes/particles/Explosion.tscn" id="2_explosion"]
 
 [sub_resource type="SphereShape3D" id="SphereShape_detect"]
 radius = 3.0
@@ -15,6 +16,7 @@ albedo_color = Color(0.35, 0.25, 0.15, 1)
 collision_layer = 8
 collision_mask = 1
 script = ExtResource("1_mine")
+explosion_scene = ExtResource("2_explosion")
 
 [node name="DetectionZone" type="CollisionShape3D" parent="."]
 shape = SubResource("SphereShape_detect")
