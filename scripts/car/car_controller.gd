@@ -31,6 +31,7 @@ var is_boosting: bool = false
 var is_alive: bool = true
 var is_player: bool = false ## only true for the local player's car
 var network_id: String = "" ## session_id of the owning player
+var vehicle_data_id: String = "sedan" ## which vehicle model to load
 var is_emp_disabled: bool = false
 var _emp_timer: float = 0.0
 var current_speed_kmh: float = 0.0
@@ -56,12 +57,8 @@ func _ready() -> void:
 		damage_system.car_destroyed.connect(_on_car_destroyed)
 	if fuel_system:
 		fuel_system.fuel_empty.connect(_on_fuel_empty)
-	# Non-player cars: disable camera and fuel drain
+	# Non-player cars: disable fuel drain
 	if not is_player:
-		var cam := get_node_or_null("TopDownCamera") as Camera3D
-		if cam:
-			cam.current = false
-			cam.set_physics_process(false)
 		if fuel_system:
 			fuel_system.set_physics_process(false)
 

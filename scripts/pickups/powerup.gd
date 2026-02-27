@@ -72,29 +72,9 @@ func _apply_repair(car: VehicleBody3D) -> void:
 	var dmg = car.get_node_or_null("DamageSystem")
 	if not dmg:
 		return
-	# Find the zone with the lowest HP ratio
-	var zones := {
-		"engine": [dmg.engine_hp, dmg.max_engine_hp],
-		"chassis": [dmg.chassis_hp, dmg.max_chassis_hp],
-		"wheels": [dmg.wheel_hp, dmg.max_wheel_hp],
-		"weapon_mount": [dmg.weapon_mount_hp, dmg.max_weapon_hp],
-	}
-	var worst_zone := ""
-	var worst_ratio := 1.1
-	for zone_name in zones:
-		var ratio: float = zones[zone_name][0] / zones[zone_name][1]
-		if ratio < worst_ratio:
-			worst_ratio = ratio
-			worst_zone = zone_name
-
-	if worst_zone == "engine":
-		dmg.engine_hp = minf(dmg.engine_hp + 50.0, dmg.max_engine_hp)
-	elif worst_zone == "chassis":
-		dmg.chassis_hp = minf(dmg.chassis_hp + 50.0, dmg.max_chassis_hp)
-	elif worst_zone == "wheels":
-		dmg.wheel_hp = minf(dmg.wheel_hp + 50.0, dmg.max_wheel_hp)
-	elif worst_zone == "weapon_mount":
-		dmg.weapon_mount_hp = minf(dmg.weapon_mount_hp + 50.0, dmg.max_weapon_hp)
+	if dmg.has_method("get_worst_zone") and dmg.has_method("repair_zone"):
+		var worst_zone = dmg.get_worst_zone()
+		dmg.repair_zone(worst_zone, 50.0)
 
 
 func _apply_ammo(car: VehicleBody3D) -> void:

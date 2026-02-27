@@ -1,0 +1,229 @@
+[gd_scene format=3 uid="uid://dvehselect001"]
+
+[ext_resource type="Script" path="res://scripts/ui/vehicle_select.gd" id="1_vs"]
+
+[sub_resource type="StyleBoxFlat" id="sb_bg"]
+bg_color = Color(0.08, 0.06, 0.05, 1)
+
+[sub_resource type="StyleBoxFlat" id="sb_panel"]
+content_margin_left = 30.0
+content_margin_top = 20.0
+content_margin_right = 30.0
+content_margin_bottom = 20.0
+bg_color = Color(0.1, 0.08, 0.07, 0.95)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="sb_btn"]
+content_margin_left = 20.0
+content_margin_top = 10.0
+content_margin_right = 20.0
+content_margin_bottom = 10.0
+bg_color = Color(0.75, 0.35, 0.15, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="sb_arrow"]
+content_margin_left = 16.0
+content_margin_top = 10.0
+content_margin_right = 16.0
+content_margin_bottom = 10.0
+bg_color = Color(0.2, 0.18, 0.16, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="sb_bar_bg"]
+bg_color = Color(0.15, 0.12, 0.1, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="sb_bar_fill_speed"]
+bg_color = Color(0.3, 0.8, 0.4, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="sb_bar_fill_armor"]
+bg_color = Color(0.3, 0.5, 0.9, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="sb_bar_fill_weight"]
+bg_color = Color(0.9, 0.6, 0.2, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="Environment" id="Environment_preview"]
+background_mode = 1
+background_color = Color(0.12, 0.1, 0.09, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.4, 0.38, 0.35, 1)
+ambient_light_energy = 0.6
+
+[node name="VehicleSelect" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_vs")
+
+[node name="BG" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.06, 0.05, 1)
+
+[node name="Panel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -350.0
+offset_top = -300.0
+offset_right = 350.0
+offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("sb_panel")
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "CHOOSE YOUR RIDE"
+horizontal_alignment = 1
+
+[node name="VehicleName" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.5, 1)
+theme_override_font_sizes/font_size = 24
+text = "SEDAN"
+horizontal_alignment = 1
+
+[node name="PreviewContainer" type="PanelContainer" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 280)
+layout_mode = 2
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="Panel/VBox/PreviewContainer"]
+layout_mode = 2
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="Panel/VBox/PreviewContainer/SubViewportContainer"]
+transparent_bg = false
+handle_input_locally = false
+size = Vector2i(680, 280)
+render_target_update_mode = 4
+own_world_3d = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="Panel/VBox/PreviewContainer/SubViewportContainer/SubViewport"]
+environment = SubResource("Environment_preview")
+
+[node name="Turntable" type="Node3D" parent="Panel/VBox/PreviewContainer/SubViewportContainer/SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+
+[node name="PreviewCamera" type="Camera3D" parent="Panel/VBox/PreviewContainer/SubViewportContainer/SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 0.94, 0.34, 0, -0.34, 0.94, 0, 2.0, 5.0)
+fov = 40.0
+current = true
+
+[node name="PreviewLight" type="DirectionalLight3D" parent="Panel/VBox/PreviewContainer/SubViewportContainer/SubViewport"]
+transform = Transform3D(0.85, -0.25, 0.46, 0, 0.88, 0.48, -0.52, -0.41, 0.75, 3, 4, 2)
+light_energy = 1.5
+shadow_enabled = true
+
+[node name="FillLight" type="DirectionalLight3D" parent="Panel/VBox/PreviewContainer/SubViewportContainer/SubViewport"]
+transform = Transform3D(0.85, 0.25, -0.46, 0, 0.88, 0.48, 0.52, -0.41, 0.75, -3, 2, -2)
+light_energy = 0.5
+
+[node name="NavRow" type="HBoxContainer" parent="Panel/VBox"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 20
+
+[node name="LeftButton" type="Button" parent="Panel/VBox/NavRow"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("sb_arrow")
+text = "◀"
+
+[node name="RightButton" type="Button" parent="Panel/VBox/NavRow"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("sb_arrow")
+text = "▶"
+
+[node name="StatsGrid" type="GridContainer" parent="Panel/VBox"]
+layout_mode = 2
+columns = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 6
+
+[node name="SpeedLabel" type="Label" parent="Panel/VBox/StatsGrid"]
+layout_mode = 2
+text = "SPEED"
+
+[node name="SpeedBar" type="ProgressBar" parent="Panel/VBox/StatsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/background = SubResource("sb_bar_bg")
+theme_override_styles/fill = SubResource("sb_bar_fill_speed")
+max_value = 100.0
+value = 50.0
+show_percentage = false
+
+[node name="ArmorLabel" type="Label" parent="Panel/VBox/StatsGrid"]
+layout_mode = 2
+text = "ARMOR"
+
+[node name="ArmorBar" type="ProgressBar" parent="Panel/VBox/StatsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/background = SubResource("sb_bar_bg")
+theme_override_styles/fill = SubResource("sb_bar_fill_armor")
+max_value = 100.0
+value = 50.0
+show_percentage = false
+
+[node name="WeightLabel" type="Label" parent="Panel/VBox/StatsGrid"]
+layout_mode = 2
+text = "WEIGHT"
+
+[node name="WeightBar" type="ProgressBar" parent="Panel/VBox/StatsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/background = SubResource("sb_bar_bg")
+theme_override_styles/fill = SubResource("sb_bar_fill_weight")
+max_value = 100.0
+value = 50.0
+show_percentage = false
+
+[node name="ConfirmButton" type="Button" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("sb_btn")
+text = "CONFIRM"

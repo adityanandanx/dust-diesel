@@ -10,11 +10,13 @@ var _target: Node3D
 
 
 func _ready() -> void:
-	top_level = true
-	_target = get_parent()
-	
-	# Only activate camera for the local player's car
-	if _target.has_method("get") and _target.is_player:
+	# Camera will start inactive until target is set
+	set_physics_process(false)
+
+func set_target(target: Node3D) -> void:
+	_target = target
+	if _target:
+		set_physics_process(true)
 		make_current()
 	else:
 		set_physics_process(false)

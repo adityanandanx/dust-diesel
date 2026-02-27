@@ -38,10 +38,10 @@ func _process(_delta: float) -> void:
 		lines.append("FUEL: %.0f/%.0f" % [fuel_sys.fuel, fuel_sys.max_fuel])
 	
 	# Damage zones
-	var dmg = car.get_node_or_null("DamageSystem")
+	var dmg: CarDamageSystem = car.get_node_or_null("DamageSystem")
 	if dmg:
 		lines.append("ENG: %.0f  CHS: %.0f" % [dmg.engine_hp, dmg.chassis_hp])
-		lines.append("WHL: %.0f  WPN: %.0f" % [dmg.wheel_hp, dmg.weapon_mount_hp])
+		lines.append("WHL: %.0f  WPN: %.0f" % [dmg.wheel_hp[0], dmg.weapon_mount_hp])
 	
 	# Weapons
 	var pri := "none"

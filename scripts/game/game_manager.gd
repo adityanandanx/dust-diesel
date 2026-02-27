@@ -6,7 +6,6 @@ extends Node3D
 signal player_eliminated(player_name: String, killer_name: String)
 signal match_ended(winner_name: String)
 
-const CarScene := preload("res://scenes/vehicles/Car.tscn")
 const WreckScene := preload("res://scenes/vehicles/CarWreck.tscn")
 const WeaponScene := preload("res://scenes/weapons/ScrapCannon.tscn")
 const WeaponScene2 := preload("res://scenes/weapons/MineLayer.tscn")
@@ -26,6 +25,7 @@ var WEAPON_SCENES: Array[PackedScene] = [
 @onready var cars_container: Node3D = $Cars
 @onready var wrecks_container: Node3D = $Wrecks
 @onready var hud: Control = $HUDLayer/HUD
+@onready var top_down_camera: Camera3D = $TopDownCamera
 
 var alive_cars: Array[Car] = []
 var kill_feed: Array[Dictionary] = [] # {victim, killer, cause, time}
@@ -51,7 +51,11 @@ func _spawn_networked_players() -> void:
 		var p_data: Dictionary = NakamaManager.connected_players[sess_id]
 		var is_me = (sess_id == NakamaManager.current_match.self_user.session_id)
 		
-		var car: Car = CarScene.instantiate()
+		var v_id = p_data.get("selected_vehicle", "sedan")
+		var v_data = VehicleRegistry.get_by_id(v_id)
+		var car_scene: PackedScene = load(v_data.scene_path)
+		var car: Car = car_scene.instantiate()
+		
 		car.is_player = is_me
 		car.network_id = sess_id
 		car.name = p_data.get("username", "Unknown")
@@ -72,6 +76,8 @@ func _spawn_networked_players() -> void:
 		
 		if is_me and hud and hud.has_method("bind_car"):
 			hud.bind_car(car)
+		if is_me and top_down_camera and top_down_camera.has_method("set_target"):
+			top_down_camera.set_target(car)
 			
 	NakamaManager.player_left.connect(_on_player_left)
 	NakamaManager.socket.received_match_state.connect(_on_remote_match_state)
@@ -167,7 +173,16 @@ func _on_player_left(sess_id: String) -> void:
 func _spawn_players() -> void:
 	var points := spawn_points.get_children()
 	# For Phase 1: spawn 1 player car at first spawn point
-	var car: Car = CarScene.instantiate()
+	# Read chosen vehicle from NakamaManager if available
+	var v_id = "sedan"
+	if NakamaManager.current_match:
+		var my_sess_id = NakamaManager.current_match.self_user.session_id
+		if my_sess_id in NakamaManager.connected_players:
+			v_id = NakamaManager.connected_players[my_sess_id].get("selected_vehicle", "sedan")
+			
+	var v_data = VehicleRegistry.get_by_id(v_id)
+	var car_scene: PackedScene = load(v_data.scene_path)
+	var car: Car = car_scene.instantiate()
 	car.is_player = true
 	cars_container.add_child(car)
 	car.global_transform = points[0].global_transform
@@ -179,13 +194,17 @@ func _spawn_players() -> void:
 	if hud and hud.has_method("bind_car"):
 		hud.bind_car(car)
 
+	if top_down_camera and top_down_camera.has_method("set_target"):
+		top_down_camera.set_target(car)
+
 	# Equip starting weapon
 	car.equip_weapon(WeaponScene.instantiate())
 	car.equip_weapon(WeaponScene2.instantiate())
 
-	# Spawn a dummy target car for testing
 	if points.size() > 3:
-		var dummy: Car = CarScene.instantiate()
+		v_data = VehicleRegistry.get_by_id("ambulance")
+		car_scene = load(v_data.scene_path)
+		var dummy: Car = car_scene.instantiate()
 		cars_container.add_child(dummy)
 		dummy.global_transform = points[0].global_transform
 		dummy.car_destroyed.connect(_on_car_destroyed)
@@ -231,3 +250,10 @@ func _eliminate_car(car: Car, cause: String) -> void:
 		match_ended.emit(winner.name)
 	elif alive_cars.is_empty():
 		match_ended.emit("Nobody")
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		if NakamaManager.current_match:
+			NakamaManager.leave_match()
+		get_tree().change_scene_to_file("res://scenes/ui/MainMenu.tscn")

@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" path="res://scenes/game/SpawnPoints.tscn" id="3_sp"]
 [ext_resource type="PackedScene" uid="uid://cl3nsdq7vvkhf" path="res://scenes/ui/HUD.tscn" id="4_hud"]
 [ext_resource type="Script" uid="uid://cajyejhovrbpr" path="res://scripts/pickups/pickup_spawner.gd" id="5_spawner"]
+[ext_resource type="Script" uid="uid://b1w3l3qwuykxd" path="res://scripts/car/car_camera.gd" id="6_cam"]
 
 [node name="Game" type="Node3D" unique_id=834326654]
 script = ExtResource("1_gm")
@@ -24,3 +25,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 14.607107, 0)
 
 [node name="PickupSpawner" type="Node3D" parent="." unique_id=2022638148]
 script = ExtResource("5_spawner")
+
+[node name="TopDownCamera" type="Camera3D" parent="." unique_id=241321802]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 20, 12)
+script = ExtResource("6_cam")
+offset = Vector3(4.575, 8.48, -7.235)

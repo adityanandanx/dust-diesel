@@ -1,0 +1,99 @@
+[gd_scene format=3 uid="uid://bj4caqbmhdp3r"]
+
+[ext_resource type="Script" uid="uid://dpjskd2r5n121" path="res://scripts/car/car_drift.gd" id="2_xlkok"]
+[ext_resource type="Script" uid="uid://bmdglrejhr7d8" path="res://scripts/car/car_fuel.gd" id="3_6tx6m"]
+[ext_resource type="Script" uid="uid://bkhv4rh2p3546" path="res://scripts/car/car_debug_label.gd" id="4_7a1ya"]
+[ext_resource type="PackedScene" uid="uid://rf85x8udf34c" path="res://assets/models/cars/police.glb" id="5_d70sh"]
+[ext_resource type="Script" uid="uid://bmc4ls0cm2puy" path="res://scripts/car/car_controller.gd" id="car_ctrl"]
+[ext_resource type="Script" uid="uid://bu0i2u81i0o6c" path="res://scripts/car/car_damage.gd" id="car_dmg"]
+[ext_resource type="Script" uid="uid://dipfvvcl608ow" path="res://scripts/network/network_sync.gd" id="net_sync"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_tn0jf"]
+friction = 0.22
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_body"]
+size = Vector3(1.2558594, 0.8, 2.8945007)
+
+[node name="Police" type="VehicleBody3D" unique_id=1902546355]
+mass = 1200.0
+physics_material_override = SubResource("PhysicsMaterial_tn0jf")
+center_of_mass_mode = 1
+script = ExtResource("car_ctrl")
+
+[node name="BodyCollision" type="CollisionShape3D" parent="." unique_id=410720277]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.70000005, -0.010848999)
+shape = SubResource("BoxShape3D_body")
+
+[node name="FrontLeft" type="VehicleWheel3D" parent="." unique_id=599088781]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4526717, 0.3, 0.80999994)
+use_as_steering = true
+wheel_radius = 0.3
+wheel_friction_slip = 3.0
+suspension_stiffness = 40.0
+damping_compression = 2.0
+damping_relaxation = 3.0
+
+[node name="WheelMesh_DELETE" type="Node3D" parent="FrontLeft" unique_id=1717730084]
+
+[node name="WheelMesh" type="Node3D" parent="FrontLeft" unique_id=667031304]
+
+[node name="FrontRight" type="VehicleWheel3D" parent="." unique_id=1574134002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.453, 0.3, 0.80999994)
+use_as_steering = true
+wheel_radius = 0.3
+wheel_friction_slip = 3.0
+suspension_stiffness = 40.0
+damping_compression = 2.0
+damping_relaxation = 3.0
+
+[node name="WheelMesh_DELETE" type="Node3D" parent="FrontRight" unique_id=1793121830]
+
+[node name="WheelMesh" type="Node3D" parent="FrontRight" unique_id=1145206279]
+
+[node name="RearLeft" type="VehicleWheel3D" parent="." unique_id=418457703]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4526717, 0.3, -0.80999994)
+use_as_traction = true
+wheel_radius = 0.3
+wheel_friction_slip = 3.0
+suspension_stiffness = 40.0
+damping_compression = 2.0
+damping_relaxation = 3.0
+
+[node name="WheelMesh_DELETE" type="Node3D" parent="RearLeft" unique_id=1257224440]
+
+[node name="WheelMesh" type="Node3D" parent="RearLeft" unique_id=2139419542]
+
+[node name="RearRight" type="VehicleWheel3D" parent="." unique_id=676060906]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.453, 0.3, -0.80999994)
+use_as_traction = true
+wheel_radius = 0.3
+wheel_friction_slip = 3.0
+suspension_stiffness = 40.0
+damping_compression = 2.0
+damping_relaxation = 3.0
+
+[node name="WheelMesh_DELETE" type="Node3D" parent="RearRight" unique_id=545535150]
+
+[node name="WheelMesh" type="Node3D" parent="RearRight" unique_id=844407656]
+
+[node name="DriftSystem" type="Node" parent="." unique_id=263138991]
+script = ExtResource("2_xlkok")
+
+[node name="FuelSystem" type="Node" parent="." unique_id=816409599]
+script = ExtResource("3_6tx6m")
+
+[node name="DamageSystem" type="Node" parent="." unique_id=166317889]
+script = ExtResource("car_dmg")
+
+[node name="WeaponMount" type="Node3D" parent="." unique_id=475629504]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 1.5)
+
+[node name="NetworkSync" type="Node" parent="." unique_id=1872429279]
+script = ExtResource("net_sync")
+
+[node name="DebugLabel" type="Label3D" parent="." unique_id=62709717]
+pixel_size = 0.0145
+billboard = 1
+script = ExtResource("4_7a1ya")
+
+[node name="Visuals" parent="." unique_id=1388838250 instance=ExtResource("5_d70sh")]

@@ -6,6 +6,20 @@
 [ext_resource type="PackedScene" path="res://scenes/environment/AbandonedVehicle.tscn" id="4_av"]
 [ext_resource type="PackedScene" path="res://scenes/environment/GasStation.tscn" id="5_gs"]
 
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_va4aw"]
+sky_top_color = Color(0.368385, 0.43760103, 0.5298789, 1)
+sky_horizon_color = Color(1, 1, 1, 1)
+sky_curve = 0.33287108
+ground_bottom_color = Color(0, 0, 0, 1)
+sun_curve = 3.6377184
+
+[sub_resource type="Sky" id="Sky_irwdj"]
+sky_material = SubResource("ProceduralSkyMaterial_va4aw")
+
+[sub_resource type="Environment" id="Environment_8lif5"]
+background_mode = 2
+sky = SubResource("Sky_irwdj")
+
 [sub_resource type="BoxShape3D" id="ground_shape"]
 size = Vector3(100, 0.2, 100)
 
@@ -30,6 +44,7 @@ light_energy = 1.2
 shadow_enabled = true
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1435360165]
+environment = SubResource("Environment_8lif5")
 
 [node name="Ground" type="StaticBody3D" parent="." unique_id=177162346]
 

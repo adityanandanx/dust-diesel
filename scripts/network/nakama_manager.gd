@@ -24,7 +24,8 @@ enum OpCodes {
 	SPAWN_PICKUP = 6,
 	ENV_DAMAGE = 7,
 	WEAPON_EQUIP = 8,
-	PLAYER_DEATH = 9
+	PLAYER_DEATH = 9,
+	VEHICLE_SELECT = 10
 }
 
 # Dictionary of session_id to user data
@@ -58,7 +59,10 @@ func connect_socket_async() -> bool:
 
 func _ready() -> void:
 	# Create client to local Nakama server (default config)
-	client = Nakama.create_client("defaultkey", "127.0.0.1", 7350, "http")
+	var server_host := OS.get_environment("NAKAMA_HOST")
+	if server_host == "":
+		server_host = "127.0.0.1"
+	client = Nakama.create_client("defaultkey", server_host, 7350, "http")
 	client.timeout = 10
 	
 	# Authenticate automatically using device UUID
@@ -215,13 +219,20 @@ func _on_match_state(match_state: NakamaRTAPI.MatchData) -> void:
 	# Decode operations and emit signals for other systems
 	if match_state.op_code == OpCodes.GAME_STARTED:
 		game_started.emit()
+	elif match_state.op_code == OpCodes.VEHICLE_SELECT:
+		var data: Dictionary = JSON.parse_string(match_state.data)
+		if data and "session_id" in data and "vehicle_id" in data:
+			var sess_id: String = data["session_id"]
+			if sess_id in connected_players:
+				connected_players[sess_id]["selected_vehicle"] = data["vehicle_id"]
 
 
 func _add_player(user_id: String, username: String, sess_id: String) -> void:
 	var p_data = {
 		"user_id": user_id,
 		"username": username,
-		"session_id": sess_id
+		"session_id": sess_id,
+		"selected_vehicle": "sedan"
 	}
 	connected_players[sess_id] = p_data
 	player_joined.emit(sess_id, user_id, username)
