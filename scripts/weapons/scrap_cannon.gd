@@ -17,6 +17,8 @@ func _ready() -> void:
 	damage = chunk_damage
 	reload_type = ReloadType.NONE
 	max_ammo = -1 ## infinite, just slow fire rate
+	recoil_impulse = 140.0
+	recoil_torque_impulse = 9.0
 
 
 func _do_fire() -> void:

@@ -181,10 +181,10 @@ func _handle_weapons() -> void:
 		return
 	if Input.is_action_pressed("fire_primary") and primary_weapon and primary_weapon.can_fire():
 		primary_weapon.fire()
-		weapon_fired.emit(WeaponBase.MountType.PRIMARY, 1.0)
+		weapon_fired.emit(WeaponBase.MountType.PRIMARY, _weapon_recoil_intensity(primary_weapon))
 	if Input.is_action_pressed("fire_secondary") and secondary_weapon and secondary_weapon.can_fire():
 		secondary_weapon.fire()
-		weapon_fired.emit(WeaponBase.MountType.SECONDARY, 0.8)
+		weapon_fired.emit(WeaponBase.MountType.SECONDARY, _weapon_recoil_intensity(secondary_weapon))
 
 
 func equip_weapon(weapon: WeaponBase) -> void:
@@ -254,3 +254,10 @@ func _on_body_entered(body: Node) -> void:
 
 	_collision_signal_cooldown = 0.08
 	collision_impact.emit(relative_speed)
+
+
+func _weapon_recoil_intensity(weapon: WeaponBase) -> float:
+	if weapon == null:
+		return 0.8
+	var recoil: float = absf(weapon.recoil_impulse) * maxf(weapon.recoil_linear_scale, 0.1)
+	return clampf(recoil / 450.0, 0.35, 2.0)

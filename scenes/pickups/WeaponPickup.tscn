@@ -1,30 +1,25 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene format=3 uid="uid://clbfhda2k0s0d"]
 
-[ext_resource type="Script" path="res://scripts/pickups/weapon_pickup.gd" id="1_wp"]
-[ext_resource type="PackedScene" path="res://scenes/particles/PickupEffect.tscn" id="2_pickup_fx"]
+[ext_resource type="Script" uid="uid://u3rfdxxs7io6" path="res://scripts/pickups/weapon_pickup.gd" id="1_wp"]
+[ext_resource type="PackedScene" uid="uid://du8klyxo3878q" path="res://scenes/particles/PickupEffect.tscn" id="2_pickup_fx"]
+[ext_resource type="PackedScene" uid="uid://cg7xk5uswi4f8" path="res://assets/models/pickups/powerup_random_1_LOD1_cube_mat_0.glb" id="3_w66fd"]
 
 [sub_resource type="SphereShape3D" id="SphereShape_trigger"]
 radius = 2.5
 
-[sub_resource type="BoxMesh" id="BoxMesh_crate"]
-size = Vector3(0.8, 0.8, 0.8)
-
-[sub_resource type="StandardMaterial3D" id="Mat_crate"]
-albedo_color = Color(0.9, 0.7, 0.2, 1)
-emission_enabled = true
-emission = Color(0.9, 0.6, 0.1, 1)
-emission_energy_multiplier = 0.8
-
-[node name="WeaponPickup" type="Area3D"]
+[node name="WeaponPickup" type="Area3D" unique_id=1150191335]
 collision_layer = 16
-collision_mask = 1
 script = ExtResource("1_wp")
 pickup_effect_scene = ExtResource("2_pickup_fx")
-pickup_effect_color = Color(1.0, 0.8, 0.2, 1)
+pickup_effect_color = Color(1, 0.8, 0.2, 1)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=978571046]
 shape = SubResource("SphereShape_trigger")
 
-[node name="CrateMesh" type="MeshInstance3D" parent="."]
-mesh = SubResource("BoxMesh_crate")
-surface_material_override/0 = SubResource("Mat_crate")
+[node name="powerup_random_1_LOD1_cube_mat_02" parent="." unique_id=397722461 instance=ExtResource("3_w66fd")]
+
+[node name="TypeLabel" type="Label3D" parent="." unique_id=812674003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+pixel_size = 0.015
+billboard = 1
+text = "Weapon"

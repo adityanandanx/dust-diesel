@@ -1,6 +1,6 @@
 extends PickupBase
 
-## Powerup — one of 7 types, applies a temporary or instant effect.
+## Powerup — one of 6 types, applies a temporary or instant effect.
 
 enum PowerupType {
 	NITRO_SURGE,
@@ -9,13 +9,33 @@ enum PowerupType {
 	REPAIR_KIT,
 	WEAPON_AMMO,
 	DOUBLE_DAMAGE,
-	GHOST_MODE,
 }
 
 @export var powerup_type: PowerupType = PowerupType.FUEL_CAN
+@export var show_type_label: bool = true
+@export var type_label_height: float = 1.25
+
+@onready var type_label: Label3D = $TypeLabel
+
+
+func _ready() -> void:
+	super._ready()
+	_sanitize_powerup_type()
+	_update_type_label()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_EDITOR_POST_SAVE:
+		_update_type_label()
+
+
+func _validate_property(_property: Dictionary) -> void:
+	# Keep in-editor label current when properties are adjusted.
+	_update_type_label()
 
 
 func apply(car: VehicleBody3D) -> void:
+	_sanitize_powerup_type()
 	match powerup_type:
 		PowerupType.NITRO_SURGE:
 			_apply_nitro(car)
@@ -29,8 +49,6 @@ func apply(car: VehicleBody3D) -> void:
 			_apply_ammo(car)
 		PowerupType.DOUBLE_DAMAGE:
 			_apply_double_damage(car)
-		PowerupType.GHOST_MODE:
-			_apply_ghost(car)
 
 
 func _apply_nitro(car: VehicleBody3D) -> void:
@@ -105,14 +123,29 @@ func _apply_double_damage(car: VehicleBody3D) -> void:
 	)
 
 
-func _apply_ghost(car: VehicleBody3D) -> void:
-	## Disable car-to-car collisions for 5 seconds
-	var original_layer: int = car.collision_layer
-	var original_mask: int = car.collision_mask
-	car.collision_layer = 0 # invisible to other cars
-	car.collision_mask &= ~1 # don't collide with cars
-	get_tree().create_timer(5.0).timeout.connect(func():
-		if is_instance_valid(car):
-			car.collision_layer = original_layer
-			car.collision_mask = original_mask
-	)
+func _update_type_label() -> void:
+	if type_label == null:
+		return
+	_sanitize_powerup_type()
+	type_label.visible = show_type_label
+	type_label.position = Vector3(0.0, type_label_height, 0.0)
+	type_label.text = _get_type_display_name()
+
+
+func _get_type_display_name() -> String:
+	var keys: PackedStringArray = PowerupType.keys()
+	if keys.is_empty():
+		return "Powerup"
+	var idx: int = clampi(int(powerup_type), 0, keys.size() - 1)
+	var enum_name: String = keys[idx]
+	var words: PackedStringArray = enum_name.split("_")
+	for i in range(words.size()):
+		words[i] = String(words[i]).capitalize()
+	return " ".join(words)
+
+
+func _sanitize_powerup_type() -> void:
+	var keys: PackedStringArray = PowerupType.keys()
+	if keys.is_empty():
+		return
+	powerup_type = clampi(int(powerup_type), 0, keys.size() - 1) as PowerupType

@@ -18,12 +18,15 @@ extends Node
 
 @export_group("Collision Sparks")
 @export var enable_collision_sparks: bool = true
+@export var weapon_fire_particles_scene: PackedScene = preload("res://scenes/particles/WeaponFire.tscn")
 @export var spark_damage_threshold: float = 5.0 ## minimum damage to trigger sparks
 @export var spark_contact_cooldown: float = 0.12
 @export var spark_min_vehicle_speed_kmh: float = 8.0
 @export var spark_scrape_height_offset: float = 0.01
 @export var spark_directional_up_bias: float = 0.25
 @export var spark_directional_outward_bias: float = 0.35
+@export var weapon_fire_particle_scale: float = 0.7
+@export var damage_hit_particle_scale: float = 1.0
 
 @export_group("Explosions")
 @export var enable_explosions: bool = true
@@ -102,6 +105,8 @@ func _connect_signals() -> void:
 		if car.max_contacts_reported < 8:
 			car.max_contacts_reported = 8
 		car.body_entered.connect(_on_body_entered)
+		if car.has_signal("weapon_fired"):
+			car.weapon_fired.connect(_on_weapon_fired)
 
 	# Death signals for explosion
 	if enable_explosions:
@@ -196,9 +201,7 @@ func _on_zone_damaged(_zone: String, current_hp: float, max_hp: float) -> void:
 	var damage_taken: float = max_hp - current_hp
 	if damage_taken < spark_damage_threshold:
 		return
-	# Emit sparks at the car's position
-	if is_instance_valid(_sparks):
-		_sparks.emit_at(car.global_position + Vector3(0, 0.5, 0))
+	_spawn_one_shot_sparks(car.global_position + Vector3(0, 0.5, 0), damage_hit_particle_scale)
 
 
 func _on_body_entered(_body: Node) -> void:
@@ -216,6 +219,39 @@ func _on_body_entered(_body: Node) -> void:
 		var contact_data: Dictionary = _get_best_contact_data()
 		contact_pos = contact_data["position"]
 	_sparks.emit_at(contact_pos)
+
+
+func _on_weapon_fired(_mount_slot: int = 0, intensity: float = 1.0) -> void:
+	if not enable_collision_sparks:
+		return
+	var forward: Vector3 = car.global_basis.z.normalized()
+	var pos: Vector3 = car.global_position + forward * 2.1 + Vector3.UP * 0.55
+	_spawn_weapon_fire_particles(pos, forward, weapon_fire_particle_scale * maxf(intensity, 0.3))
+
+
+func _spawn_weapon_fire_particles(pos: Vector3, forward: Vector3, scale_factor: float = 1.0) -> void:
+	if not weapon_fire_particles_scene:
+		return
+	var fx: GPUParticles3D = weapon_fire_particles_scene.instantiate()
+	get_tree().current_scene.add_child(fx)
+	fx.scale = Vector3.ONE * maxf(scale_factor, 0.25)
+	if fx.has_method("set"):
+		fx.set("auto_free", true)
+	if fx.has_method("emit_at"):
+		fx.emit_at(pos, forward)
+
+
+func _spawn_one_shot_sparks(pos: Vector3, scale_factor: float = 1.0) -> void:
+	if not collision_sparks_scene:
+		return
+	var sparks: GPUParticles3D = collision_sparks_scene.instantiate()
+	get_tree().current_scene.add_child(sparks)
+	if sparks.has_method("set"):
+		sparks.set("auto_free", true)
+	if sparks.has_method("emit_at"):
+		sparks.emit_at(pos)
+	var scaled: Vector3 = Vector3.ONE * maxf(scale_factor, 0.25)
+	sparks.scale = scaled
 
 
 func _get_best_contact_data() -> Dictionary:

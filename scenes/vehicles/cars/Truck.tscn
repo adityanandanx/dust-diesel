@@ -1,38 +1,37 @@
 [gd_scene format=3 uid="uid://cdutdv2hiisr7"]
 
-[ext_resource type="PackedScene" uid="uid://cm3bvefqxdra4" path="res://scenes/vehicles/CarBase.tscn" id="1_base"]
+[ext_resource type="PackedScene" uid="uid://bfkgf5b4quwip" path="res://scenes/vehicles/CarBase.tscn" id="1_base"]
 [ext_resource type="PackedScene" uid="uid://bwmcgy5msgfgw" path="res://assets/models/cars/truck.glb" id="2_model"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_body"]
 size = Vector3(1.3024902, 0.9099609, 2.828247)
 
-[node name="Truck" instance=ExtResource("1_base")]
-center_of_mass = Vector3(0, 0, -0.1)
+[node name="Truck" unique_id=758576748 instance=ExtResource("1_base")]
 
-[node name="BodyCollision" parent="."]
+[node name="BodyCollision" parent="." index="0" unique_id=410720277]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.66201174, -0.027282715)
 shape = SubResource("BoxShape3D_body")
 
-[node name="FrontLeft" parent="."]
+[node name="FrontLeft" parent="." index="1" unique_id=599088781]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.424, 0.3, 0.86)
 use_as_traction = false
 use_as_steering = true
 wheel_radius = 0.3
 
-[node name="FrontRight" parent="."]
+[node name="FrontRight" parent="." index="2" unique_id=1574134002]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.42357332, 0.3, 0.86)
 use_as_traction = false
 use_as_steering = true
 wheel_radius = 0.3
 
-[node name="RearLeft" parent="."]
+[node name="RearLeft" parent="." index="3" unique_id=418457703]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.424, 0.3, -0.76)
 use_as_steering = false
 wheel_radius = 0.3
 
-[node name="RearRight" parent="."]
+[node name="RearRight" parent="." index="4" unique_id=676060906]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.42357332, 0.3, -0.76)
 use_as_steering = false
 wheel_radius = 0.3
 
-[node name="Visuals" parent="." instance=ExtResource("2_model")]
+[node name="Visuals" parent="." index="12" unique_id=1858013778 instance=ExtResource("2_model")]

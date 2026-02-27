@@ -13,6 +13,8 @@ func _ready() -> void:
 	damage = 0.0 ## no direct damage
 	reload_type = ReloadType.NONE
 	max_ammo = -1
+	recoil_impulse = 65.0
+	recoil_torque_impulse = 4.0
 
 
 func _do_fire() -> void:

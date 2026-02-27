@@ -3,6 +3,8 @@ class_name ProjectileBase
 
 ## Base for physical projectiles — bolts, spears, scrap chunks.
 
+const HitParticlesScene := preload("res://scenes/particles/CollisionSparks.tscn")
+
 signal hit(collider: Node)
 
 @export var speed: float = 60.0
@@ -46,6 +48,7 @@ func launch(dir: Vector3, from_car: Node = null) -> void:
 
 func _on_hit(collision: KinematicCollision3D) -> void:
 	var collider := collision.get_collider()
+	_spawn_hit_particles(collision)
 
 	# Don't hit our own car
 	if collider == owner_car:
@@ -79,6 +82,23 @@ func _on_hit(collision: KinematicCollision3D) -> void:
 		return # Don't destroy — keep going
 
 	queue_free()
+
+
+func _spawn_hit_particles(collision: KinematicCollision3D) -> void:
+	if HitParticlesScene == null:
+		return
+
+	var fx: Node3D = HitParticlesScene.instantiate()
+	get_tree().current_scene.add_child(fx)
+
+	var hit_pos: Vector3 = collision.get_position()
+	var hit_normal: Vector3 = collision.get_normal().normalized()
+	fx.global_position = hit_pos + hit_normal * 0.03
+
+	if fx.has_method("set"):
+		fx.set("auto_free", true)
+	if fx.has_method("emit_at"):
+		fx.emit_at(fx.global_position)
 
 
 func _apply_splash(center: Vector3) -> void:

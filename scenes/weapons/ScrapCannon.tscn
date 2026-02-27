@@ -1,27 +1,10 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene format=3 uid="uid://c5vyghw7jtfgd"]
 
-[ext_resource type="Script" path="res://scripts/weapons/scrap_cannon.gd" id="1_sc"]
+[ext_resource type="Script" uid="uid://djyhgv55cg4fy" path="res://scripts/weapons/scrap_cannon.gd" id="1_sc"]
+[ext_resource type="PackedScene" uid="uid://boxn0p3yta4q" path="res://assets/models/weapons/rpg.blend" id="2_6cebv"]
 
-[sub_resource type="CylinderMesh" id="CylMesh_barrel"]
-top_radius = 0.25
-bottom_radius = 0.3
-height = 1.5
-
-[sub_resource type="BoxMesh" id="BoxMesh_body"]
-size = Vector3(0.5, 0.4, 0.6)
-
-[sub_resource type="StandardMaterial3D" id="Mat_sc"]
-albedo_color = Color(0.4, 0.35, 0.3, 1)
-metallic = 0.6
-
-[node name="ScrapCannon" type="Node3D"]
+[node name="ScrapCannon" type="Node3D" unique_id=662804266]
 script = ExtResource("1_sc")
 
-[node name="Body" type="MeshInstance3D" parent="."]
-mesh = SubResource("BoxMesh_body")
-surface_material_override/0 = SubResource("Mat_sc")
-
-[node name="Barrel" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0.7)
-mesh = SubResource("CylMesh_barrel")
-surface_material_override/0 = SubResource("Mat_sc")
+[node name="rpg" parent="." unique_id=293993457 instance=ExtResource("2_6cebv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)

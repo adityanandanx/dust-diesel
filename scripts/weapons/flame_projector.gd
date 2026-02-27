@@ -22,6 +22,8 @@ func _ready() -> void:
 	max_heat = 100.0
 	cooldown_rate = 25.0
 	overheat_penalty = 2.5
+	recoil_impulse = 2.0
+	recoil_torque_impulse = 0.35
 	_flame_particles = get_node_or_null("FlameParticles")
 
 

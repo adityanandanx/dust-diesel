@@ -28,6 +28,13 @@ const SHAKE_GROUP := "camera_shake_listener"
 @export var explosion_max_distance: float = 45.0
 @export var explosion_distance_falloff: float = 1.8
 
+@export_group("Weapon Recoil")
+@export var recoil_camera_kick_enabled: bool = true
+@export var recoil_pitch_kick_min_deg: float = 0.25
+@export var recoil_pitch_kick_max_deg: float = 2.8
+@export var recoil_pitch_kick_limit_deg: float = 4.0
+@export var recoil_pitch_return_speed: float = 10.0
+
 var _target: Node3D
 var _phantom_camera: Node = null
 var _shake_emitter: PhantomCameraNoiseEmitter3D = null
@@ -36,6 +43,7 @@ var _current_yaw_rad: float = 0.0
 var _current_pitch_rad: float = 0.0
 var _rotation_initialized: bool = false
 var _damage_hp_cache: Dictionary = {}
+var _recoil_pitch_offset_deg: float = 0.0
 
 
 func _ready() -> void:
@@ -179,7 +187,8 @@ func _physics_process(_delta: float) -> void:
 		return
 
 	var target_yaw_rad: float = _get_desired_yaw_rad()
-	var target_pitch_rad: float = deg_to_rad(chase_pitch_degrees)
+	_recoil_pitch_offset_deg = move_toward(_recoil_pitch_offset_deg, 0.0, recoil_pitch_return_speed * _delta)
+	var target_pitch_rad: float = deg_to_rad(chase_pitch_degrees + _recoil_pitch_offset_deg)
 
 	if not _rotation_initialized:
 		_current_yaw_rad = target_yaw_rad
@@ -245,6 +254,9 @@ func _on_target_collision_impact(impact_speed: float) -> void:
 func _on_target_weapon_fired(_mount_slot: int, intensity: float) -> void:
 	var t: float = clampf(intensity, 0.0, 1.5)
 	_emit_shake(0.35 + t * 0.45, 11.0, 0.07, 0.0, 0.09)
+	if recoil_camera_kick_enabled:
+		var kick: float = lerpf(recoil_pitch_kick_min_deg, recoil_pitch_kick_max_deg, clampf(t / 1.5, 0.0, 1.0))
+		_recoil_pitch_offset_deg = clampf(_recoil_pitch_offset_deg - kick, -recoil_pitch_kick_limit_deg, recoil_pitch_kick_limit_deg)
 
 
 func _on_target_destroyed(_car: Node) -> void:

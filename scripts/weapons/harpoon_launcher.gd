@@ -25,6 +25,8 @@ func _ready() -> void:
 	damage = spear_damage
 	reload_type = ReloadType.NONE
 	max_ammo = -1
+	recoil_impulse = 90.0
+	recoil_torque_impulse = 6.0
 
 	# Prepare the tether line visual
 	_tether_mesh = ImmediateMesh.new()

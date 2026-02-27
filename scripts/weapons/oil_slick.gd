@@ -16,6 +16,9 @@ func _ready() -> void:
 	max_ammo = 5
 	ammo = max_ammo
 	reload_type = ReloadType.NONE
+	recoil_impulse = 22.0
+	recoil_torque_impulse = 1.0
+	recoil_direction = 1.0
 
 
 func _do_fire() -> void:

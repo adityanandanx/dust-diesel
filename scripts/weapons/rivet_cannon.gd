@@ -19,6 +19,8 @@ func _ready() -> void:
 	max_heat = 100.0
 	cooldown_rate = 40.0
 	overheat_penalty = 2.0
+	recoil_impulse = 8.0
+	recoil_torque_impulse = 1.2
 
 
 func _do_fire() -> void:

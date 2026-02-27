@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://ditqmn7g6083s"]
 
 [ext_resource type="Script" uid="uid://bhedjl535uywm" path="res://scripts/environment/gas_station.gd" id="1_gs"]
-[ext_resource type="PackedScene" path="res://scenes/particles/Explosion.tscn" id="2_explosion"]
+[ext_resource type="PackedScene" uid="uid://b5h8fseakav36" path="res://scenes/particles/Explosion.tscn" id="2_explosion"]
 
 [sub_resource type="BoxShape3D" id="BoxShape_canopy"]
 size = Vector3(12, 0.5, 8)

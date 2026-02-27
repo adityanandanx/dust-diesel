@@ -5,6 +5,8 @@ extends Node3D
 const WeaponPickupScene := preload("res://scenes/pickups/WeaponPickup.tscn")
 const PowerupScene := preload("res://scenes/pickups/Powerup.tscn")
 const FuelCanScene := preload("res://scenes/pickups/FuelCan.tscn")
+const POWERUP_TYPE_COUNT: int = 6
+const POWERUP_DEFAULT_TYPE: int = 2 # FUEL_CAN
 
 @export var weapon_spawn_interval: float = 15.0
 @export var powerup_spawn_interval: float = 20.0
@@ -79,8 +81,8 @@ func _physics_process(delta: float) -> void:
 
 	if _powerup_timer <= 0.0:
 		_powerup_timer = powerup_spawn_interval
-		# PowerupType enum is 0..6
-		_host_spawn_pickup(1, randi() % 7)
+		# PowerupType enum is 0..5
+		_host_spawn_pickup(1, randi() % POWERUP_TYPE_COUNT)
 
 	if _fuel_timer <= 0.0:
 		_fuel_timer = fuel_spawn_interval
@@ -117,7 +119,7 @@ func spawn_pickup_local(p_id: int, category: int, sub_type: int, pos_index: int)
 	var pickup: PickupBase = scene.instantiate()
 	pickup.pickup_id = p_id
 	if category == 1:
-		pickup.powerup_type = sub_type
+		pickup.powerup_type = _sanitize_powerup_subtype(sub_type)
 		
 	add_child(pickup)
 	pickup.global_position = _spawn_positions[pos_index]
@@ -147,9 +149,15 @@ func _spawn_pickup_at_pos(p_id: int, category: int, sub_type: int, pos: Vector3)
 	var pickup: PickupBase = scene.instantiate()
 	pickup.pickup_id = p_id
 	if category == 1:
-		pickup.powerup_type = sub_type
+		pickup.powerup_type = _sanitize_powerup_subtype(sub_type)
 		
 	get_tree().current_scene.add_child(pickup)
 	pickup.global_position = pos
 	_active_pickups[p_id] = pickup
 	pickup.tree_exited.connect(func(): _active_pickups.erase(p_id))
+
+
+func _sanitize_powerup_subtype(sub_type: int) -> int:
+	if sub_type < 0 or sub_type >= POWERUP_TYPE_COUNT:
+		return POWERUP_DEFAULT_TYPE
+	return sub_type

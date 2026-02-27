@@ -1,32 +1,20 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene format=3 uid="uid://d4dvnsnq7p8t6"]
 
-[ext_resource type="Script" path="res://scripts/environment/fuel_barrel.gd" id="1_fb"]
-[ext_resource type="PackedScene" path="res://scenes/particles/Explosion.tscn" id="2_explosion"]
+[ext_resource type="Script" uid="uid://fflmgeinug72" path="res://scripts/environment/fuel_barrel.gd" id="1_fb"]
+[ext_resource type="PackedScene" uid="uid://b5h8fseakav36" path="res://scenes/particles/Explosion.tscn" id="2_explosion"]
+[ext_resource type="PackedScene" uid="uid://kllwl5d0e7hl" path="res://assets/models/low_poly_explosive_barrel/low_poly_explosive_barrel.glb" id="3_gktcr"]
 
 [sub_resource type="CylinderShape3D" id="CylinderShape_barrel"]
-height = 1.2
-radius = 0.4
+height = 1.0
 
-[sub_resource type="CylinderMesh" id="CylinderMesh_barrel"]
-height = 1.2
-top_radius = 0.4
-bottom_radius = 0.4
-
-[sub_resource type="StandardMaterial3D" id="Mat_barrel"]
-albedo_color = Color(0.8, 0.1, 0.1, 1)
-metallic = 0.5
-roughness = 0.8
-
-[node name="FuelBarrel" type="RigidBody3D"]
+[node name="FuelBarrel" type="RigidBody3D" unique_id=414374479]
 mass = 50.0
 script = ExtResource("1_fb")
 explosion_scene = ExtResource("2_explosion")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1969876529]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 shape = SubResource("CylinderShape_barrel")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-mesh = SubResource("CylinderMesh_barrel")
-surface_material_override/0 = SubResource("Mat_barrel")
+[node name="FAB converted" parent="." unique_id=62224916 instance=ExtResource("3_gktcr")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
