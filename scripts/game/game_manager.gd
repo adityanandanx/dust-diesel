@@ -7,7 +7,7 @@ signal player_eliminated(player_name: String, killer_name: String)
 signal match_ended(winner_name: String)
 
 const WreckScene := preload("res://scenes/vehicles/CarWreck.tscn")
-const WeaponScene := preload("res://scenes/weapons/ScrapCannon.tscn")
+const WeaponScene := preload("res://scenes/weapons/RivetCannon.tscn")
 const WeaponScene2 := preload("res://scenes/weapons/MineLayer.tscn")
 const DefaultSpawnPointsScene := preload("res://scenes/game/SpawnPoints.tscn")
 

@@ -10,6 +10,7 @@ extends WeaponBase
 
 var _is_firing: bool = false
 var _flame_particles: GPUParticles3D = null
+var _smoke_particles: GPUParticles3D = null
 
 
 func _ready() -> void:
@@ -25,6 +26,7 @@ func _ready() -> void:
 	recoil_impulse = 2.0
 	recoil_torque_impulse = 0.35
 	_flame_particles = get_node_or_null("FlameParticles")
+	_smoke_particles = get_node_or_null("SmokeParticles")
 
 
 func _do_fire() -> void:
@@ -33,6 +35,8 @@ func _do_fire() -> void:
 	_is_firing = true
 	if _flame_particles:
 		_flame_particles.emitting = true
+	if _smoke_particles:
+		_smoke_particles.emitting = true
 	# Cone damage check — find all cars in range and angle
 	var origin := global_position
 	var forward: Vector3 = owner_car.global_basis.z.normalized()
@@ -52,6 +56,8 @@ func _physics_process(delta: float) -> void:
 		_is_firing = false
 		if _flame_particles:
 			_flame_particles.emitting = false
+		if _smoke_particles:
+			_smoke_particles.emitting = false
 
 
 func _apply_flame_damage(body: Node3D) -> void:
