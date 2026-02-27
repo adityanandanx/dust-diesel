@@ -2,6 +2,11 @@ extends Control
 
 ## In-game HUD — fuel, boost, speed, weapon indicator, kill feed, damage flash.
 
+@export_group("Debug")
+@export var debug_overlay_enabled: bool = false
+@export var debug_overlay_position: Vector2 = Vector2(16.0, 16.0)
+@export var debug_overlay_font_size: int = 14
+
 @onready var fuel_bar: ProgressBar = $FuelGauge/FuelBar
 @onready var fuel_label: Label = $FuelGauge/FuelLabel
 @onready var boost_bar: ProgressBar = $BoostGauge/BoostBar
@@ -21,6 +26,12 @@ extends Control
 
 var _bound_car: Car = null
 var _damage_flash_timers: Dictionary = {} # direction -> float
+var _debug_overlay_label: Label = null
+
+
+func _ready() -> void:
+	_ensure_debug_overlay_label()
+	_set_debug_overlay_visible(debug_overlay_enabled)
 
 
 func bind_car(car: Car) -> void:
@@ -33,6 +44,9 @@ func bind_car(car: Car) -> void:
 
 
 func _process(delta: float) -> void:
+	_set_debug_overlay_visible(debug_overlay_enabled)
+	_update_debug_overlay()
+
 	if not _bound_car:
 		return
 
@@ -157,3 +171,53 @@ func _get_damage_panel(dir_key: String) -> ColorRect:
 		"top": return damage_top
 		"bottom": return damage_bottom
 	return null
+
+
+func _ensure_debug_overlay_label() -> void:
+	if _debug_overlay_label:
+		return
+
+	_debug_overlay_label = Label.new()
+	_debug_overlay_label.name = "DebugOverlay"
+	_debug_overlay_label.position = debug_overlay_position
+	_debug_overlay_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_debug_overlay_label.modulate = Color(0.95, 1.0, 0.85, 0.95)
+	_debug_overlay_label.add_theme_font_size_override("font_size", debug_overlay_font_size)
+	add_child(_debug_overlay_label)
+
+
+func _set_debug_overlay_visible(is_visible: bool) -> void:
+	if not _debug_overlay_label:
+		_ensure_debug_overlay_label()
+	_debug_overlay_label.visible = is_visible
+
+
+func _update_debug_overlay() -> void:
+	if not _debug_overlay_label or not _debug_overlay_label.visible:
+		return
+
+	if not _bound_car:
+		_debug_overlay_label.text = "DEBUG\nNo car bound"
+		return
+
+	var lines: PackedStringArray = PackedStringArray()
+	lines.append("DEBUG")
+	lines.append("Vehicle: %s" % _bound_car.vehicle_data_id)
+	lines.append("Speed: %3d km/h" % int(_bound_car.current_speed_kmh))
+	lines.append("Top: %.1f" % _bound_car.max_speed_kmh)
+	lines.append("Engine: %.0f  Brake: %.0f" % [_bound_car.max_engine_force, _bound_car.max_brake_force])
+	lines.append("Steer: %.2f / %.2f" % [_bound_car.max_steer_angle, _bound_car.steer_speed])
+	lines.append("Mass: %.0f kg" % _bound_car.mass)
+	lines.append("Boost: %.0f / %.0f" % [_bound_car.boost_meter, _bound_car.boost_meter_max])
+
+	if _bound_car.fuel_system:
+		lines.append("Fuel: %.0f / %.0f" % [_bound_car.fuel_system.fuel, _bound_car.fuel_system.max_fuel])
+
+	if _bound_car.damage_system:
+		var dmg: CarDamageSystem = _bound_car.damage_system
+		lines.append("HP E/C/W/Wpn: %.0f/%.0f/%.0f/%.0f" % [dmg.engine_hp, dmg.chassis_hp, dmg.wheel_hp[0], dmg.weapon_mount_hp])
+		lines.append("HP Max E/C/W/Wpn: %.0f/%.0f/%.0f/%.0f" % [dmg.max_engine_hp, dmg.max_chassis_hp, dmg.max_wheel_hp, dmg.max_weapon_hp])
+
+	_debug_overlay_label.position = debug_overlay_position
+	_debug_overlay_label.add_theme_font_size_override("font_size", debug_overlay_font_size)
+	_debug_overlay_label.text = "\n".join(lines)

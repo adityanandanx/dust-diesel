@@ -9,7 +9,8 @@ const UI_STAT_MIN: float = 0.0
 const UI_STAT_MAX: float = 100.0
 
 var _vehicles: Dictionary = {} # id -> VehicleData
-var _ordered: Array = []
+var _ordered: Array[VehicleData] = []
+var _tuning_by_id: Dictionary = {} # id -> runtime tuning dictionary
 
 
 func _ready() -> void:
@@ -37,9 +38,17 @@ func get_random():
 
 func get_vehicle_index(id: String) -> int:
 	for i in range(_ordered.size()):
-		if _ordered[i].id == id:
+		var data: VehicleData = _ordered[i]
+		if data.id == id:
 			return i
 	return 0
+
+
+func apply_tuning(car: Car, vehicle_id: String) -> void:
+	if car == null:
+		return
+	var tuning: Dictionary = _get_tuning_for_id(vehicle_id)
+	_apply_tuning_to_car(car, tuning)
 
 
 func _register_vehicles() -> void:
@@ -79,8 +88,12 @@ func _register_vehicles() -> void:
 		# Since we know the GLB names map directly to the IDs:
 		var glb_name = String(d[0]).replace("_", "-") + ".glb"
 		v.preview_model_path = model_base_path + glb_name
+		var speed_seed: float = _seed_for_speed(v.id)
+		var armor_seed: float = _seed_for_armor(v.id)
+		var weight_seed: float = _seed_for_weight(v.id)
+		_tuning_by_id[v.id] = _build_tuning(speed_seed, armor_seed, weight_seed)
 
-		var stats: Dictionary = _extract_runtime_stats(v.scene_path)
+		var stats: Dictionary = _extract_runtime_stats(v.id, v.scene_path)
 		raw_stats.append(stats)
 		
 		_vehicles[v.id] = v
@@ -89,7 +102,7 @@ func _register_vehicles() -> void:
 	_apply_ui_stats(raw_stats)
 
 
-func _extract_runtime_stats(scene_path: String) -> Dictionary:
+func _extract_runtime_stats(vehicle_id: String, scene_path: String) -> Dictionary:
 	var stats := {
 		"speed": 0.0,
 		"armor": 0.0,
@@ -107,6 +120,8 @@ func _extract_runtime_stats(scene_path: String) -> Dictionary:
 		return stats
 
 	var car := root as VehicleBody3D
+	var tuning: Dictionary = _get_tuning_for_id(vehicle_id)
+	_apply_tuning_to_car(car, tuning)
 
 	var max_speed: float = _float_or(car.get("max_speed_kmh"), 0.0)
 	var max_engine_force: float = _float_or(car.get("max_engine_force"), 0.0)
@@ -128,6 +143,149 @@ func _extract_runtime_stats(scene_path: String) -> Dictionary:
 
 	car.queue_free()
 	return stats
+
+
+func _apply_tuning_to_car(car: VehicleBody3D, tuning: Dictionary) -> void:
+	if car == null:
+		return
+
+	car.mass = _float_or(tuning.get("mass"), car.mass)
+	car.set("max_speed_kmh", _float_or(tuning.get("max_speed_kmh"), _float_or(car.get("max_speed_kmh"), 120.0)))
+	car.set("max_engine_force", _float_or(tuning.get("max_engine_force"), _float_or(car.get("max_engine_force"), 4000.0)))
+	car.set("max_brake_force", _float_or(tuning.get("max_brake_force"), _float_or(car.get("max_brake_force"), 200.0)))
+	car.set("reverse_force_ratio", _float_or(tuning.get("reverse_force_ratio"), _float_or(car.get("reverse_force_ratio"), 0.6)))
+	car.set("max_steer_angle", _float_or(tuning.get("max_steer_angle"), _float_or(car.get("max_steer_angle"), 0.4)))
+	car.set("steer_speed", _float_or(tuning.get("steer_speed"), _float_or(car.get("steer_speed"), 3.0)))
+	car.set("steer_return_speed", _float_or(tuning.get("steer_return_speed"), _float_or(car.get("steer_return_speed"), 5.0)))
+	car.set("boost_force_multiplier", _float_or(tuning.get("boost_force_multiplier"), _float_or(car.get("boost_force_multiplier"), 2.0)))
+
+	var damage_node: Node = car.get_node_or_null("DamageSystem")
+	if damage_node:
+		damage_node.set("max_engine_hp", _float_or(tuning.get("max_engine_hp"), _float_or(damage_node.get("max_engine_hp"), 100.0)))
+		damage_node.set("max_chassis_hp", _float_or(tuning.get("max_chassis_hp"), _float_or(damage_node.get("max_chassis_hp"), 100.0)))
+		damage_node.set("max_wheel_hp", _float_or(tuning.get("max_wheel_hp"), _float_or(damage_node.get("max_wheel_hp"), 50.0)))
+		damage_node.set("max_weapon_hp", _float_or(tuning.get("max_weapon_hp"), _float_or(damage_node.get("max_weapon_hp"), 60.0)))
+		damage_node.set("engine_hp", _float_or(damage_node.get("max_engine_hp"), 100.0))
+		damage_node.set("chassis_hp", _float_or(damage_node.get("max_chassis_hp"), 100.0))
+		damage_node.set("weapon_mount_hp", _float_or(damage_node.get("max_weapon_hp"), 60.0))
+		var wheel_max: float = _float_or(damage_node.get("max_wheel_hp"), 50.0)
+		var wheel_hp: Array[float] = [wheel_max, wheel_max, wheel_max, wheel_max]
+		damage_node.set("wheel_hp", wheel_hp)
+
+
+func _get_tuning_for_id(vehicle_id: String) -> Dictionary:
+	if vehicle_id in _tuning_by_id:
+		return _tuning_by_id[vehicle_id]
+	if "sedan" in _tuning_by_id:
+		return _tuning_by_id["sedan"]
+	return _build_tuning(60.0, 50.0, 50.0)
+
+
+func _build_tuning(speed_seed: float, armor_seed: float, weight_seed: float) -> Dictionary:
+	var speed_t: float = clampf(speed_seed / 100.0, 0.0, 1.0)
+	var armor_t: float = clampf(armor_seed / 100.0, 0.0, 1.0)
+	var weight_t: float = clampf(weight_seed / 100.0, 0.0, 1.0)
+
+	var max_speed_kmh: float = lerpf(95.0, 170.0, speed_t)
+	var max_engine_force: float = lerpf(2800.0, 5600.0, speed_t)
+	var boost_force_multiplier: float = lerpf(1.6, 2.5, speed_t)
+
+	var mass: float = lerpf(900.0, 2400.0, weight_t)
+	var brake_from_weight: float = lerpf(160.0, 360.0, weight_t)
+	var max_brake_force: float = brake_from_weight + (max_speed_kmh - 95.0) * 0.4
+
+	var steer_agility: float = 1.0 - weight_t
+	var max_steer_angle: float = lerpf(0.30, 0.48, steer_agility)
+	var steer_speed: float = lerpf(2.0, 3.8, steer_agility)
+	var steer_return_speed: float = lerpf(3.8, 6.2, steer_agility)
+	var reverse_force_ratio: float = lerpf(0.5, 0.72, steer_agility)
+
+	var max_engine_hp: float = lerpf(70.0, 180.0, armor_t)
+	var max_chassis_hp: float = lerpf(85.0, 240.0, armor_t)
+	var max_wheel_hp: float = lerpf(35.0, 95.0, armor_t)
+	var max_weapon_hp: float = lerpf(45.0, 120.0, armor_t)
+
+	return {
+		"max_speed_kmh": max_speed_kmh,
+		"max_engine_force": max_engine_force,
+		"boost_force_multiplier": boost_force_multiplier,
+		"mass": mass,
+		"max_brake_force": max_brake_force,
+		"reverse_force_ratio": reverse_force_ratio,
+		"max_steer_angle": max_steer_angle,
+		"steer_speed": steer_speed,
+		"steer_return_speed": steer_return_speed,
+		"max_engine_hp": max_engine_hp,
+		"max_chassis_hp": max_chassis_hp,
+		"max_wheel_hp": max_wheel_hp,
+		"max_weapon_hp": max_weapon_hp,
+	}
+
+
+func _seed_for_speed(vehicle_id: String) -> float:
+	var seeds := {
+		"ambulance": 50.0,
+		"delivery": 45.0,
+		"delivery_flat": 45.0,
+		"firetruck": 40.0,
+		"garbage_truck": 35.0,
+		"hatchback_sports": 80.0,
+		"police": 75.0,
+		"race": 95.0,
+		"race_future": 100.0,
+		"sedan": 60.0,
+		"sedan_sports": 85.0,
+		"suv": 55.0,
+		"suv_luxury": 60.0,
+		"taxi": 65.0,
+		"truck": 40.0,
+		"van": 45.0,
+	}
+	return _float_or(seeds.get(vehicle_id), 60.0)
+
+
+func _seed_for_armor(vehicle_id: String) -> float:
+	var seeds := {
+		"ambulance": 60.0,
+		"delivery": 50.0,
+		"delivery_flat": 45.0,
+		"firetruck": 80.0,
+		"garbage_truck": 90.0,
+		"hatchback_sports": 30.0,
+		"police": 55.0,
+		"race": 20.0,
+		"race_future": 15.0,
+		"sedan": 40.0,
+		"sedan_sports": 35.0,
+		"suv": 65.0,
+		"suv_luxury": 70.0,
+		"taxi": 40.0,
+		"truck": 75.0,
+		"van": 55.0,
+	}
+	return _float_or(seeds.get(vehicle_id), 50.0)
+
+
+func _seed_for_weight(vehicle_id: String) -> float:
+	var seeds := {
+		"ambulance": 70.0,
+		"delivery": 65.0,
+		"delivery_flat": 60.0,
+		"firetruck": 90.0,
+		"garbage_truck": 100.0,
+		"hatchback_sports": 40.0,
+		"police": 50.0,
+		"race": 30.0,
+		"race_future": 25.0,
+		"sedan": 45.0,
+		"sedan_sports": 40.0,
+		"suv": 75.0,
+		"suv_luxury": 80.0,
+		"taxi": 45.0,
+		"truck": 85.0,
+		"van": 60.0,
+	}
+	return _float_or(seeds.get(vehicle_id), 50.0)
 
 
 func _average_wheel_radius(car: VehicleBody3D) -> float:

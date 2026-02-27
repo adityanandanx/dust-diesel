@@ -22,6 +22,11 @@ NakamaManager="*res://scripts/network/nakama_manager.gd"
 GameState="*res://scripts/autoloads/GameState.gd"
 VehicleRegistry="*res://scripts/car/vehicle_registry.gd"
 MapRegistry="*res://scripts/game/map_registry.gd"
+PhantomCameraManager="*uid://duq6jhf6unyis"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/phantom_camera/plugin.cfg")
 
 [input]
 

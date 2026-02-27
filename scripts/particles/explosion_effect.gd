@@ -42,6 +42,9 @@ func explode() -> void:
 		flash.restart()
 		flash.emitting = true
 
+	# Notify active gameplay cameras so they can apply distance-based shake.
+	get_tree().call_group("camera_shake_listener", "camera_shake_explosion", global_position, _scale_factor)
+
 	if auto_free:
 		# Free after longest particle lifetime expires
 		var max_life: float = maxf(fire_burst.lifetime, maxf(smoke_cloud.lifetime, flash.lifetime))

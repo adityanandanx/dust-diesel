@@ -105,6 +105,8 @@ func _spawn_networked_players() -> void:
 		var v_data = VehicleRegistry.get_by_id(v_id)
 		var car_scene: PackedScene = load(v_data.scene_path)
 		var car: Car = car_scene.instantiate()
+		car.vehicle_data_id = v_id
+		VehicleRegistry.apply_tuning(car, v_id)
 		
 		car.is_player = is_me
 		car.network_id = sess_id
@@ -233,6 +235,8 @@ func _spawn_players() -> void:
 	var v_data = VehicleRegistry.get_by_id(v_id)
 	var car_scene: PackedScene = load(v_data.scene_path)
 	var car: Car = car_scene.instantiate()
+	car.vehicle_data_id = v_id
+	VehicleRegistry.apply_tuning(car, v_id)
 	car.is_player = true
 	cars_container.add_child(car)
 	car.global_transform = points[0].global_transform
@@ -255,6 +259,8 @@ func _spawn_players() -> void:
 		v_data = VehicleRegistry.get_by_id("ambulance")
 		car_scene = load(v_data.scene_path)
 		var dummy: Car = car_scene.instantiate()
+		dummy.vehicle_data_id = "ambulance"
+		VehicleRegistry.apply_tuning(dummy, "ambulance")
 		cars_container.add_child(dummy)
 		dummy.global_transform = points[0].global_transform
 		dummy.car_destroyed.connect(_on_car_destroyed)
@@ -298,6 +304,10 @@ func _eliminate_car(car: Car, cause: String) -> void:
 	var entry := {"victim": car.name, "killer": "", "cause": cause, "time": Time.get_ticks_msec()}
 	kill_feed.append(entry)
 	player_eliminated.emit(car.name, "")
+
+	# Detach camera before the node is deleted to avoid stale follow targets.
+	if car.is_player and top_down_camera and top_down_camera.has_method("set_target"):
+		top_down_camera.set_target(null)
 
 	# Remove the car
 	car.queue_free()

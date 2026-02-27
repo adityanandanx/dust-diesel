@@ -7,6 +7,8 @@ class_name Car
 # ---------- Signals ----------
 signal car_destroyed(car: Car)
 signal car_stalled(car: Car)
+signal collision_impact(impact_speed: float)
+signal weapon_fired(mount_slot: int, intensity: float)
 
 # ---------- Exports ----------
 @export_group("Engine")
@@ -36,6 +38,7 @@ var is_emp_disabled: bool = false
 var _emp_timer: float = 0.0
 var current_speed_kmh: float = 0.0
 var _steer_current: float = 0.0
+var _collision_signal_cooldown: float = 0.0
 
 # ---------- Weapons ----------
 var primary_weapon: WeaponBase = null
@@ -57,6 +60,10 @@ func _ready() -> void:
 		damage_system.car_destroyed.connect(_on_car_destroyed)
 	if fuel_system:
 		fuel_system.fuel_empty.connect(_on_fuel_empty)
+	contact_monitor = true
+	max_contacts_reported = 6
+	if not body_entered.is_connected(_on_body_entered):
+		body_entered.connect(_on_body_entered)
 	# Non-player cars: disable fuel drain
 	if not is_player:
 		if fuel_system:
@@ -64,6 +71,8 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	_collision_signal_cooldown = maxf(_collision_signal_cooldown - delta, 0.0)
+
 	if not is_alive:
 		engine_force = 0.0
 		brake = max_brake_force
@@ -172,8 +181,10 @@ func _handle_weapons() -> void:
 		return
 	if Input.is_action_pressed("fire_primary") and primary_weapon and primary_weapon.can_fire():
 		primary_weapon.fire()
+		weapon_fired.emit(WeaponBase.MountType.PRIMARY, 1.0)
 	if Input.is_action_pressed("fire_secondary") and secondary_weapon and secondary_weapon.can_fire():
 		secondary_weapon.fire()
+		weapon_fired.emit(WeaponBase.MountType.SECONDARY, 0.8)
 
 
 func equip_weapon(weapon: WeaponBase) -> void:
@@ -221,3 +232,25 @@ func _on_car_destroyed() -> void:
 func _on_fuel_empty() -> void:
 	is_alive = false
 	car_stalled.emit(self )
+
+
+func _on_body_entered(body: Node) -> void:
+	if not is_player:
+		return
+	if _collision_signal_cooldown > 0.0:
+		return
+
+	var other_velocity: Vector3 = Vector3.ZERO
+	if body is RigidBody3D:
+		other_velocity = (body as RigidBody3D).linear_velocity
+	elif body is CharacterBody3D:
+		other_velocity = (body as CharacterBody3D).velocity
+	elif body is VehicleBody3D:
+		other_velocity = (body as VehicleBody3D).linear_velocity
+
+	var relative_speed: float = (linear_velocity - other_velocity).length()
+	if relative_speed < 2.5:
+		return
+
+	_collision_signal_cooldown = 0.08
+	collision_impact.emit(relative_speed)
