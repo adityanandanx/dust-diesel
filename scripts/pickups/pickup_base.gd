@@ -54,10 +54,16 @@ func _on_body_entered(body: Node3D) -> void:
 		_is_collected = true
 		apply(body)
 		_spawn_pickup_effect()
+		_emit_pickup_log(body)
 		collected.emit(body)
 		
 		if NakamaManager.current_match:
-			var data = {"id": pickup_id}
+			var data = {
+				"id": pickup_id,
+				"collector": body.name,
+				"kind": _get_log_kind(),
+				"detail": _get_log_detail(),
+			}
 			NakamaManager.send_match_state(NakamaManager.OpCodes.PICKUP_CLAIM, JSON.stringify(data))
 			
 		queue_free()
@@ -78,3 +84,24 @@ func _spawn_pickup_effect() -> void:
 		fx.particle_color = pickup_effect_color
 	if fx.has_method("play"):
 		fx.play()
+
+
+func _get_log_kind() -> String:
+	return "pickup"
+
+
+func _get_log_detail() -> String:
+	return name
+
+
+func _emit_pickup_log(body: Node) -> void:
+	var hud_nodes: Array = get_tree().get_nodes_in_group("hud_log_feed")
+	if hud_nodes.is_empty():
+		return
+
+	var hud_node: Node = hud_nodes[0]
+	if not hud_node.has_method("add_pickup_log"):
+		return
+
+	var collector_name: String = body.name if body != null else "Unknown"
+	hud_node.add_pickup_log(collector_name, _get_log_kind(), _get_log_detail())

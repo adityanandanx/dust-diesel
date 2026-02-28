@@ -1,34 +1,47 @@
 [gd_scene format=3 uid="uid://cl3nsdq7vvkhf"]
 
 [ext_resource type="Script" uid="uid://bs365ijxmiifi" path="res://scripts/ui/hud.gd" id="1_hud"]
+[ext_resource type="Script" uid="uid://1h7kao5i5q0j" path="res://scripts/ui/radial_cooldown.gd" id="2_radial"]
 
-[sub_resource type="StyleBoxFlat" id="sb_fuel_bg"]
-bg_color = Color(0.15, 0.12, 0.1, 0.7)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
+[sub_resource type="StyleBoxFlat" id="sb_bar_bg"]
+bg_color = Color(0.12, 0.11, 0.1, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="sb_fuel_fill"]
-bg_color = Color(0.9, 0.65, 0.1, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
+[sub_resource type="StyleBoxFlat" id="sb_fill_orange"]
+bg_color = Color(0.9, 0.56, 0.2, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="sb_boost_bg"]
-bg_color = Color(0.1, 0.1, 0.15, 0.7)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-[sub_resource type="StyleBoxFlat" id="sb_boost_fill"]
+[sub_resource type="StyleBoxFlat" id="sb_fill_blue"]
 bg_color = Color(0.2, 0.7, 1, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="sb_panel"]
+bg_color = Color(0.08, 0.06, 0.05, 0.84)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.5, 0.28, 0.2, 0.9)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="sb_fill_green"]
+bg_color = Color(0.25, 0.85, 0.4, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_boost"]
 
@@ -41,82 +54,462 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_hud")
+minimap_world_radius = 50.0
 
-[node name="FuelGauge" type="Control" parent="." unique_id=224051351]
+[node name="SafeArea" type="MarginContainer" parent="." unique_id=235029653]
 layout_mode = 1
-anchors_preset = 2
-anchor_top = 1.0
+anchors_preset = 15
+anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = -80.0
-offset_right = 220.0
-offset_bottom = -20.0
-grow_vertical = 0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 14
 
-[node name="FuelLabel" type="Label" parent="FuelGauge" unique_id=2125247869]
-layout_mode = 1
-offset_right = 200.0
-offset_bottom = 20.0
-text = "FUEL"
+[node name="MainLayout" type="VBoxContainer" parent="SafeArea" unique_id=1812740823]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="TopRow" type="HBoxContainer" parent="SafeArea/MainLayout" unique_id=1739373936]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="TopLeftStack" type="VBoxContainer" parent="SafeArea/MainLayout/TopRow" unique_id=1020631456]
+custom_minimum_size = Vector2(360, 0)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PowerupHeader" type="Label" parent="SafeArea/MainLayout/TopRow/TopLeftStack" unique_id=1299966412]
+layout_mode = 2
+text = "ACTIVE POWERUPS"
+
+[node name="PowerupList" type="VBoxContainer" parent="SafeArea/MainLayout/TopRow/TopLeftStack" unique_id=1013284814]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TopSpacer2" type="Control" parent="SafeArea/MainLayout/TopRow" unique_id=1221941896]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="KillFeedMargin" type="MarginContainer" parent="SafeArea/MainLayout/TopRow" unique_id=625016842]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="LogFeedStack" type="VBoxContainer" parent="SafeArea/MainLayout/TopRow/KillFeedMargin" unique_id=647812330]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="LogFeedHeader" type="Label" parent="SafeArea/MainLayout/TopRow/KillFeedMargin/LogFeedStack" unique_id=248960939]
+layout_mode = 2
+text = "EVENT LOG"
+
+[node name="KillFeed" type="VBoxContainer" parent="SafeArea/MainLayout/TopRow/KillFeedMargin/LogFeedStack" unique_id=2012698127]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TopSpacer" type="Control" parent="SafeArea/MainLayout/TopRow" unique_id=2144831281]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CenterMargin" type="MarginContainer" parent="SafeArea/MainLayout/TopRow" unique_id=375908303]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="VehicleStack" type="VBoxContainer" parent="SafeArea/MainLayout/TopRow/CenterMargin" unique_id=423018213]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="VehicleHeader" type="Label" parent="SafeArea/MainLayout/TopRow/CenterMargin/VehicleStack" unique_id=1489893085]
+layout_mode = 2
+text = "VEHICLE STATUS"
 horizontal_alignment = 1
 
-[node name="FuelBar" type="ProgressBar" parent="FuelGauge" unique_id=138239721]
-layout_mode = 1
-offset_top = 24.0
-offset_right = 200.0
-offset_bottom = 50.0
-theme_override_styles/background = SubResource("sb_fuel_bg")
-theme_override_styles/fill = SubResource("sb_fuel_fill")
-value = 100.0
-show_percentage = false
+[node name="VehicleSilhouette" type="Control" parent="SafeArea/MainLayout/TopRow/CenterMargin/VehicleStack" unique_id=312472899]
+custom_minimum_size = Vector2(0, 130)
+layout_mode = 2
+size_flags_horizontal = 3
 
-[node name="BoostGauge" type="Control" parent="." unique_id=1385402147]
+[node name="ChassisIcon" type="TextureRect" parent="SafeArea/MainLayout/TopRow/CenterMargin/VehicleStack/VehicleSilhouette" unique_id=1473856187]
+unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 230.0
-offset_top = -60.0
-offset_right = 430.0
-offset_bottom = -20.0
-grow_vertical = 0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="BoostLabel" type="Label" parent="BoostGauge" unique_id=2126820810]
+[node name="EngineIcon" type="TextureRect" parent="SafeArea/MainLayout/TopRow/CenterMargin/VehicleStack/VehicleSilhouette" unique_id=1047561546]
+unique_name_in_owner = true
 layout_mode = 1
-offset_right = 200.0
-offset_bottom = 16.0
-text = "BOOST"
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -28.0
+offset_top = -48.0
+offset_right = 28.0
+offset_bottom = -26.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch_mode = 5
 
-[node name="BoostBar" type="ProgressBar" parent="BoostGauge" unique_id=38651738]
+[node name="WeaponMountIcon" type="TextureRect" parent="SafeArea/MainLayout/TopRow/CenterMargin/VehicleStack/VehicleSilhouette" unique_id=1209746763]
+unique_name_in_owner = true
 layout_mode = 1
-offset_top = 18.0
-offset_right = 200.0
-offset_bottom = 36.0
-theme_override_styles/background = SubResource("sb_boost_bg")
-theme_override_styles/fill = SubResource("sb_boost_fill")
-show_percentage = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = 26.0
+offset_right = 24.0
+offset_bottom = 48.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch_mode = 5
 
-[node name="SpeedLabel" type="Label" parent="." unique_id=1519796933]
+[node name="WheelFLIcon" type="TextureRect" parent="SafeArea/MainLayout/TopRow/CenterMargin/VehicleStack/VehicleSilhouette" unique_id=1786159982]
+unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = -110.0
-offset_right = 220.0
-offset_bottom = -85.0
-grow_vertical = 0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -74.0
+offset_top = -30.0
+offset_right = -52.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch_mode = 5
+
+[node name="WheelFRIcon" type="TextureRect" parent="SafeArea/MainLayout/TopRow/CenterMargin/VehicleStack/VehicleSilhouette" unique_id=464907512]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 52.0
+offset_top = -30.0
+offset_right = 74.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch_mode = 5
+
+[node name="WheelRLIcon" type="TextureRect" parent="SafeArea/MainLayout/TopRow/CenterMargin/VehicleStack/VehicleSilhouette" unique_id=591605524]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -74.0
+offset_top = 8.0
+offset_right = -52.0
+offset_bottom = 30.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch_mode = 5
+
+[node name="WheelRRIcon" type="TextureRect" parent="SafeArea/MainLayout/TopRow/CenterMargin/VehicleStack/VehicleSilhouette" unique_id=831296600]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 52.0
+offset_top = 8.0
+offset_right = 74.0
+offset_bottom = 30.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch_mode = 5
+
+[node name="PrimaryWeaponMarker" type="TextureRect" parent="SafeArea/MainLayout/TopRow/CenterMargin/VehicleStack/VehicleSilhouette" unique_id=340176924]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -10.0
+offset_top = 52.0
+offset_right = 10.0
+offset_bottom = 72.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch_mode = 5
+
+[node name="SecondaryWeaponMarker" type="TextureRect" parent="SafeArea/MainLayout/TopRow/CenterMargin/VehicleStack/VehicleSilhouette" unique_id=1886219518]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 14.0
+offset_top = 52.0
+offset_right = 34.0
+offset_bottom = 72.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch_mode = 5
+
+[node name="HealthGrid" type="GridContainer" parent="SafeArea/MainLayout/TopRow/CenterMargin/VehicleStack" unique_id=1985118399]
+layout_mode = 2
+
+[node name="EngineValue" type="Label" parent="SafeArea/MainLayout/TopRow/CenterMargin/VehicleStack/HealthGrid" unique_id=166939998]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Engine 100/100"
+
+[node name="ChassisValue" type="Label" parent="SafeArea/MainLayout/TopRow/CenterMargin/VehicleStack/HealthGrid" unique_id=1645903468]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Chassis 100/100"
+
+[node name="WheelValue" type="Label" parent="SafeArea/MainLayout/TopRow/CenterMargin/VehicleStack/HealthGrid" unique_id=2021635175]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Wheels 200/200"
+
+[node name="WeaponMountValue" type="Label" parent="SafeArea/MainLayout/TopRow/CenterMargin/VehicleStack/HealthGrid" unique_id=2147216336]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Weapon 60/60"
+
+[node name="BodySpacer" type="Control" parent="SafeArea/MainLayout" unique_id=584185282]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BottomRow" type="HBoxContainer" parent="SafeArea/MainLayout" unique_id=786157412]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="LeftMargin" type="MarginContainer" parent="SafeArea/MainLayout/BottomRow" unique_id=1185726790]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+size_flags_vertical = 8
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="LeftStack" type="VBoxContainer" parent="SafeArea/MainLayout/BottomRow/LeftMargin" unique_id=494758033]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SpeedValue" type="Label" parent="SafeArea/MainLayout/BottomRow/LeftMargin/LeftStack" unique_id=848892178]
+unique_name_in_owner = true
+layout_mode = 2
 text = "0 km/h"
 horizontal_alignment = 1
 
-[node name="KillFeed" type="VBoxContainer" parent="." unique_id=425211458]
-layout_mode = 1
-offset_left = 10.0
-offset_top = 10.0
-offset_right = 350.0
-offset_bottom = 200.0
+[node name="FuelLabel" type="Label" parent="SafeArea/MainLayout/BottomRow/LeftMargin/LeftStack" unique_id=289674441]
+unique_name_in_owner = true
+layout_mode = 2
+text = "FUEL"
 
-[node name="DamageIndicators" type="Control" parent="." unique_id=1181956258]
+[node name="FuelBar" type="ProgressBar" parent="SafeArea/MainLayout/BottomRow/LeftMargin/LeftStack" unique_id=1885222960]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+theme_override_styles/background = SubResource("sb_bar_bg")
+theme_override_styles/fill = SubResource("sb_fill_orange")
+value = 100.0
+show_percentage = false
+
+[node name="BoostLabel" type="Label" parent="SafeArea/MainLayout/BottomRow/LeftMargin/LeftStack" unique_id=1791154964]
+unique_name_in_owner = true
+layout_mode = 2
+text = "BOOST"
+
+[node name="BoostBar" type="ProgressBar" parent="SafeArea/MainLayout/BottomRow/LeftMargin/LeftStack" unique_id=501042407]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+theme_override_styles/background = SubResource("sb_bar_bg")
+theme_override_styles/fill = SubResource("sb_fill_blue")
+show_percentage = false
+
+[node name="BottomSpacer" type="Control" parent="SafeArea/MainLayout/BottomRow" unique_id=717641879]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RightPanel" type="PanelContainer" parent="SafeArea/MainLayout/BottomRow" unique_id=1404785349]
+custom_minimum_size = Vector2(400, 220)
+layout_mode = 2
+size_flags_vertical = 8
+theme_override_styles/panel = SubResource("sb_panel")
+
+[node name="RightMargin" type="MarginContainer" parent="SafeArea/MainLayout/BottomRow/RightPanel" unique_id=1164761431]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="WeaponStack" type="VBoxContainer" parent="SafeArea/MainLayout/BottomRow/RightPanel/RightMargin" unique_id=224563371]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="WeaponHeader" type="Label" parent="SafeArea/MainLayout/BottomRow/RightPanel/RightMargin/WeaponStack" unique_id=1688940905]
+layout_mode = 2
+text = "WEAPONS"
+horizontal_alignment = 1
+
+[node name="Slots" type="HBoxContainer" parent="SafeArea/MainLayout/BottomRow/RightPanel/RightMargin/WeaponStack" unique_id=1656719604]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PrimarySlot" type="VBoxContainer" parent="SafeArea/MainLayout/BottomRow/RightPanel/RightMargin/WeaponStack/Slots" unique_id=699618971]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="PrimaryName" type="Label" parent="SafeArea/MainLayout/BottomRow/RightPanel/RightMargin/WeaponStack/Slots/PrimarySlot" unique_id=1974784116]
+unique_name_in_owner = true
+layout_mode = 2
+text = "PRIMARY"
+horizontal_alignment = 1
+
+[node name="PrimaryIconFrame" type="Control" parent="SafeArea/MainLayout/BottomRow/RightPanel/RightMargin/WeaponStack/Slots/PrimarySlot" unique_id=1678432986]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="PrimaryCooldown" type="Control" parent="SafeArea/MainLayout/BottomRow/RightPanel/RightMargin/WeaponStack/Slots/PrimarySlot/PrimaryIconFrame" unique_id=192024650]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_radial")
+
+[node name="PrimaryIcon" type="TextureRect" parent="SafeArea/MainLayout/BottomRow/RightPanel/RightMargin/WeaponStack/Slots/PrimarySlot/PrimaryIconFrame" unique_id=993216488]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -30.0
+offset_top = -30.0
+offset_right = 30.0
+offset_bottom = 30.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch_mode = 5
+
+[node name="PrimaryAmmo" type="Label" parent="SafeArea/MainLayout/BottomRow/RightPanel/RightMargin/WeaponStack/Slots/PrimarySlot" unique_id=579373453]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="PrimaryHeat" type="ProgressBar" parent="SafeArea/MainLayout/BottomRow/RightPanel/RightMargin/WeaponStack/Slots/PrimarySlot" unique_id=93610552]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+theme_override_styles/background = SubResource("sb_bar_bg")
+theme_override_styles/fill = SubResource("sb_fill_orange")
+show_percentage = false
+
+[node name="PrimaryStatus" type="Label" parent="SafeArea/MainLayout/BottomRow/RightPanel/RightMargin/WeaponStack/Slots/PrimarySlot" unique_id=480386893]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="SecondarySlot" type="VBoxContainer" parent="SafeArea/MainLayout/BottomRow/RightPanel/RightMargin/WeaponStack/Slots" unique_id=17979287]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="SecondaryName" type="Label" parent="SafeArea/MainLayout/BottomRow/RightPanel/RightMargin/WeaponStack/Slots/SecondarySlot" unique_id=967525788]
+unique_name_in_owner = true
+layout_mode = 2
+text = "SECONDARY"
+horizontal_alignment = 1
+
+[node name="SecondaryIconFrame" type="Control" parent="SafeArea/MainLayout/BottomRow/RightPanel/RightMargin/WeaponStack/Slots/SecondarySlot" unique_id=1773519387]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="SecondaryCooldown" type="Control" parent="SafeArea/MainLayout/BottomRow/RightPanel/RightMargin/WeaponStack/Slots/SecondarySlot/SecondaryIconFrame" unique_id=372565949]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_radial")
+
+[node name="SecondaryIcon" type="TextureRect" parent="SafeArea/MainLayout/BottomRow/RightPanel/RightMargin/WeaponStack/Slots/SecondarySlot/SecondaryIconFrame" unique_id=1385729437]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -30.0
+offset_top = -30.0
+offset_right = 30.0
+offset_bottom = 30.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch_mode = 5
+
+[node name="SecondaryAmmo" type="Label" parent="SafeArea/MainLayout/BottomRow/RightPanel/RightMargin/WeaponStack/Slots/SecondarySlot" unique_id=1476429485]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="SecondaryHeat" type="ProgressBar" parent="SafeArea/MainLayout/BottomRow/RightPanel/RightMargin/WeaponStack/Slots/SecondarySlot" unique_id=683517397]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+theme_override_styles/background = SubResource("sb_bar_bg")
+theme_override_styles/fill = SubResource("sb_fill_green")
+show_percentage = false
+
+[node name="SecondaryStatus" type="Label" parent="SafeArea/MainLayout/BottomRow/RightPanel/RightMargin/WeaponStack/Slots/SecondarySlot" unique_id=1514167693]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="DamageIndicators" type="Control" parent="." unique_id=1829294644]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -125,7 +518,8 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Left" type="ColorRect" parent="DamageIndicators" unique_id=323107589]
+[node name="Left" type="ColorRect" parent="DamageIndicators" unique_id=1658937556]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 9
 anchor_bottom = 1.0
@@ -134,7 +528,8 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(1, 0.2, 0.1, 0)
 
-[node name="Right" type="ColorRect" parent="DamageIndicators" unique_id=612279650]
+[node name="Right" type="ColorRect" parent="DamageIndicators" unique_id=1382437970]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 11
 anchor_left = 1.0
@@ -146,7 +541,8 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(1, 0.2, 0.1, 0)
 
-[node name="Top" type="ColorRect" parent="DamageIndicators" unique_id=333706470]
+[node name="Top" type="ColorRect" parent="DamageIndicators" unique_id=292175413]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
@@ -155,7 +551,8 @@ grow_horizontal = 2
 mouse_filter = 2
 color = Color(1, 0.2, 0.1, 0)
 
-[node name="Bottom" type="ColorRect" parent="DamageIndicators" unique_id=1705279140]
+[node name="Bottom" type="ColorRect" parent="DamageIndicators" unique_id=1909022253]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
@@ -167,47 +564,8 @@ grow_vertical = 0
 mouse_filter = 2
 color = Color(1, 0.2, 0.1, 0)
 
-[node name="WeaponPanel" type="VBoxContainer" parent="." unique_id=123045741]
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -220.0
-offset_top = -110.0
-offset_right = -20.0
-offset_bottom = -20.0
-grow_horizontal = 0
-grow_vertical = 0
-theme_override_constants/separation = 4
-
-[node name="WeaponName" type="Label" parent="WeaponPanel" unique_id=31634316]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.85, 0.5, 1)
-theme_override_font_sizes/font_size = 18
-text = "NO WEAPON"
-horizontal_alignment = 2
-
-[node name="AmmoLabel" type="Label" parent="WeaponPanel" unique_id=2101620831]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-horizontal_alignment = 2
-
-[node name="HeatBar" type="ProgressBar" parent="WeaponPanel" unique_id=719031477]
-custom_minimum_size = Vector2(0, 12)
-layout_mode = 2
-theme_override_styles/background = SubResource("sb_fuel_bg")
-theme_override_styles/fill = SubResource("sb_fuel_fill")
-show_percentage = false
-
-[node name="StatusLabel" type="Label" parent="WeaponPanel" unique_id=583214676]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.3, 1, 0.4, 1)
-theme_override_font_sizes/font_size = 12
-horizontal_alignment = 2
-
-[node name="EMPOverlay" type="ColorRect" parent="." unique_id=1728710047]
+[node name="EMPOverlay" type="ColorRect" parent="." unique_id=1402887371]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -217,7 +575,8 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.1, 0.2, 0.8, 0.3)
 
-[node name="BoostOverlay" type="ColorRect" parent="." unique_id=1232733367]
+[node name="BoostOverlay" type="ColorRect" parent="." unique_id=2143460485]
+unique_name_in_owner = true
 visible = false
 material = SubResource("ShaderMaterial_boost")
 layout_mode = 1
@@ -227,3 +586,67 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="MinimapPanel" type="PanelContainer" parent="." unique_id=1210535572]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -206.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 206.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("sb_panel")
+
+[node name="MinimapMargin" type="MarginContainer" parent="MinimapPanel" unique_id=356436592]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="MinimapStack" type="VBoxContainer" parent="MinimapPanel/MinimapMargin" unique_id=73589589]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="MinimapHeader" type="Label" parent="MinimapPanel/MinimapMargin/MinimapStack" unique_id=1827080735]
+layout_mode = 2
+text = "MINIMAP"
+horizontal_alignment = 1
+
+[node name="MinimapCanvas" type="Control" parent="MinimapPanel/MinimapMargin/MinimapStack" unique_id=345800023]
+unique_name_in_owner = true
+clip_contents = true
+custom_minimum_size = Vector2(170, 170)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="MinimapView" type="TextureRect" parent="MinimapPanel/MinimapMargin/MinimapStack/MinimapCanvas" unique_id=619263444]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+stretch_mode = 6
+
+[node name="MinimapSubViewport" type="SubViewport" parent="MinimapPanel/MinimapMargin/MinimapStack/MinimapCanvas" unique_id=485191950]
+unique_name_in_owner = true
+transparent_bg = true
+handle_input_locally = false
+msaa_3d = 1
+size = Vector2i(256, 256)
+render_target_update_mode = 4
+
+[node name="MinimapCamera" type="Camera3D" parent="MinimapPanel/MinimapMargin/MinimapStack/MinimapCanvas/MinimapSubViewport" unique_id=134885720]
+unique_name_in_owner = true
+projection = 1
+current = true
+size = 160.0
+far = 1200.0

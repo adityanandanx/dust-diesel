@@ -9,6 +9,9 @@ signal car_destroyed(car: Car)
 signal car_stalled(car: Car)
 signal collision_impact(impact_speed: float)
 signal weapon_fired(mount_slot: int, intensity: float)
+signal powerup_started(powerup_id: String, duration: float)
+signal powerup_updated(powerup_id: String, remaining: float, duration: float)
+signal powerup_ended(powerup_id: String)
 
 # ---------- Exports ----------
 @export_group("Engine")
@@ -39,6 +42,7 @@ var _emp_timer: float = 0.0
 var current_speed_kmh: float = 0.0
 var _steer_current: float = 0.0
 var _collision_signal_cooldown: float = 0.0
+var active_powerups: Dictionary = {} # String -> {duration: float, remaining: float}
 
 # ---------- Weapons ----------
 var primary_weapon: WeaponBase = null
@@ -56,6 +60,7 @@ var secondary_weapon: WeaponBase = null
 
 
 func _ready() -> void:
+	add_to_group("cars")
 	if damage_system:
 		damage_system.car_destroyed.connect(_on_car_destroyed)
 	if fuel_system:
@@ -72,6 +77,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	_collision_signal_cooldown = maxf(_collision_signal_cooldown - delta, 0.0)
+	_tick_powerups(delta)
 
 	if not is_alive:
 		engine_force = 0.0
@@ -222,6 +228,59 @@ func drop_weapon(slot: WeaponBase.MountType) -> void:
 func apply_emp(duration: float) -> void:
 	is_emp_disabled = true
 	_emp_timer = duration
+
+
+func get_emp_remaining() -> float:
+	return maxf(_emp_timer, 0.0)
+
+
+func register_powerup(powerup_id: String, duration: float) -> void:
+	var display_duration: float = maxf(duration, 1.5)
+	active_powerups[powerup_id] = {
+		"duration": display_duration,
+		"remaining": display_duration,
+	}
+	powerup_started.emit(powerup_id, display_duration)
+
+
+func get_active_powerups() -> Array[Dictionary]:
+	var list: Array[Dictionary] = []
+	for key_variant in active_powerups.keys():
+		var key: String = str(key_variant)
+		var entry: Dictionary = active_powerups[key]
+		var duration: float = float(entry.get("duration", 1.0))
+		var remaining: float = float(entry.get("remaining", 0.0))
+		list.append({
+			"id": key,
+			"duration": duration,
+			"remaining": remaining,
+			"ratio": clampf(remaining / maxf(duration, 0.001), 0.0, 1.0),
+		})
+	list.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return float(a.get("remaining", 0.0)) > float(b.get("remaining", 0.0))
+	)
+	return list
+
+
+func _tick_powerups(delta: float) -> void:
+	if active_powerups.is_empty():
+		return
+
+	var ended: Array[String] = []
+	for key_variant in active_powerups.keys():
+		var key: String = str(key_variant)
+		var entry: Dictionary = active_powerups[key]
+		var duration: float = float(entry.get("duration", 1.0))
+		var remaining: float = maxf(float(entry.get("remaining", 0.0)) - delta, 0.0)
+		entry["remaining"] = remaining
+		active_powerups[key] = entry
+		powerup_updated.emit(key, remaining, duration)
+		if remaining <= 0.0:
+			ended.append(key)
+
+	for key in ended:
+		active_powerups.erase(key)
+		powerup_ended.emit(key)
 
 
 func _on_car_destroyed() -> void:

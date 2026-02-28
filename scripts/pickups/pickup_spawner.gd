@@ -64,6 +64,8 @@ func _on_remote_match_state(match_state: NakamaRTAPI.MatchData) -> void:
 		var data: Dictionary = JSON.parse_string(match_state.data)
 		if data == null or not "id" in data: return
 		claim_pickup_local(int(data["id"]))
+		if "collector" in data and "kind" in data:
+			_emit_pickup_log(str(data["collector"]), str(data["kind"]), str(data.get("detail", "")))
 
 
 func _physics_process(delta: float) -> void:
@@ -161,3 +163,13 @@ func _sanitize_powerup_subtype(sub_type: int) -> int:
 	if sub_type < 0 or sub_type >= POWERUP_TYPE_COUNT:
 		return POWERUP_DEFAULT_TYPE
 	return sub_type
+
+
+func _emit_pickup_log(collector: String, kind: String, detail: String) -> void:
+	var hud_nodes: Array = get_tree().get_nodes_in_group("hud_log_feed")
+	if hud_nodes.is_empty():
+		return
+
+	var hud_node: Node = hud_nodes[0]
+	if hud_node.has_method("add_pickup_log"):
+		hud_node.add_pickup_log(collector, kind, detail)

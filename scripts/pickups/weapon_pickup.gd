@@ -6,6 +6,7 @@ const WEAPON_POOL: Array[PackedScene] = []
 
 # Populated in _ready since const arrays can't hold preloads
 var _weapon_scenes: Array[PackedScene] = []
+var _last_weapon_name: String = "Weapon"
 
 
 func _ready() -> void:
@@ -27,6 +28,7 @@ func apply(car: VehicleBody3D) -> void:
 	var idx := randi() % _weapon_scenes.size()
 	var scene: PackedScene = _weapon_scenes[idx]
 	var weapon = scene.instantiate()
+	_last_weapon_name = weapon.name
 	if car.has_method("equip_weapon"):
 		car.equip_weapon(weapon)
 		
@@ -38,3 +40,11 @@ func apply(car: VehicleBody3D) -> void:
 				"slot": weapon.mount_type # PRIMARY=0, SECONDARY=1
 			}
 			NakamaManager.send_match_state(NakamaManager.OpCodes.WEAPON_EQUIP, JSON.stringify(data))
+
+
+func _get_log_kind() -> String:
+	return "weapon"
+
+
+func _get_log_detail() -> String:
+	return _last_weapon_name

@@ -183,3 +183,20 @@ func refill_ammo() -> void:
 
 func get_heat_ratio() -> float:
 	return heat / max_heat if max_heat > 0.0 else 0.0
+
+
+func get_fire_cooldown_remaining() -> float:
+	return maxf(_fire_timer, 0.0)
+
+
+func get_fire_cooldown_duration() -> float:
+	if fire_rate <= 0.0:
+		return 0.0
+	return 1.0 / fire_rate
+
+
+func get_fire_cooldown_ratio() -> float:
+	var duration: float = get_fire_cooldown_duration()
+	if duration <= 0.0:
+		return 0.0
+	return clampf(_fire_timer / duration, 0.0, 1.0)

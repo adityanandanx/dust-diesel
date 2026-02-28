@@ -303,6 +303,11 @@ func _eliminate_car(car: Car, cause: String) -> void:
 	# Log elimination
 	var entry := {"victim": car.name, "killer": "", "cause": cause, "time": Time.get_ticks_msec()}
 	kill_feed.append(entry)
+	if hud:
+		if hud.has_method("add_elimination_log"):
+			hud.add_elimination_log(car.name, cause, "")
+		elif hud.has_method("add_kill_feed_entry"):
+			hud.add_kill_feed_entry("[KILL] %s (%s)" % [car.name, cause])
 	player_eliminated.emit(car.name, "")
 
 	# Detach camera before the node is deleted to avoid stale follow targets.

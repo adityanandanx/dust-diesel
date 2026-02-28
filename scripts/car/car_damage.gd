@@ -102,3 +102,18 @@ func get_worst_zone() -> DamageZone:
 		worst = DamageZone.WEAPON_MOUNT
 
 	return worst
+
+
+func get_zone_health(zone: String) -> Dictionary:
+	match zone:
+		"engine":
+			return {"current": engine_hp, "max": max_engine_hp}
+		"chassis":
+			return {"current": chassis_hp, "max": max_chassis_hp}
+		"weapon":
+			return {"current": weapon_mount_hp, "max": max_weapon_hp}
+		"wheel_0", "wheel_1", "wheel_2", "wheel_3":
+			var idx: int = int(zone.trim_prefix("wheel_"))
+			if idx >= 0 and idx < wheel_hp.size():
+				return {"current": wheel_hp[idx], "max": max_wheel_hp}
+	return {"current": 0.0, "max": 1.0}

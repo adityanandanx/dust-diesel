@@ -99,15 +99,15 @@ func _authenticate() -> void:
 	connected_to_server.emit()
 
 
-func create_match(p_match_name: String = "") -> void:
+func create_match(p_match_name: String = "") -> bool:
 	if not socket or not session:
 		printerr("Cannot create match — socket not ready.")
-		return
+		return false
 		
 	var new_match: NakamaRTAPI.Match = await socket.create_match_async(p_match_name)
 	if new_match.is_exception():
 		printerr("Create Match Error: ", new_match.get_exception().message)
-		return
+		return false
 		
 	current_match = new_match
 	connected_players.clear()
@@ -129,12 +129,13 @@ func create_match(p_match_name: String = "") -> void:
 	
 	match_joined.emit(current_match.match_id)
 	print("Created match | Code: ", code, " | ID: ", current_match.match_id)
+	return true
 
 
-func join_match(code: String) -> void:
+func join_match(code: String) -> bool:
 	if not socket or not session:
 		printerr("Cannot join match — socket not ready.")
-		return
+		return false
 	
 	# Look up the short code in Nakama Storage to get the real match_id
 	var _result = await client.list_storage_objects_async(session, "match_codes", session.user_id, 100)
@@ -175,12 +176,12 @@ func join_match(code: String) -> void:
 		
 		if not found:
 			printerr("Could not find match with code: ", code)
-			return
+			return false
 	
 	var joined_match: NakamaRTAPI.Match = await socket.join_match_async(real_match_id)
 	if joined_match.is_exception():
 		printerr("Join Match Error: ", joined_match.get_exception().message)
-		return
+		return false
 		
 	current_match = joined_match
 	match_name = code
@@ -195,6 +196,7 @@ func join_match(code: String) -> void:
 		
 	match_joined.emit(current_match.match_id)
 	print("Joined match: ", code, " -> ", current_match.match_id)
+	return true
 
 
 func leave_match() -> void:

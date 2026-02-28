@@ -36,6 +36,9 @@ func _validate_property(_property: Dictionary) -> void:
 
 func apply(car: VehicleBody3D) -> void:
 	_sanitize_powerup_type()
+	var car_node: Car = car as Car
+	if car_node:
+		car_node.register_powerup(PowerupType.keys()[int(powerup_type)], _get_display_duration())
 	match powerup_type:
 		PowerupType.NITRO_SURGE:
 			_apply_nitro(car)
@@ -49,6 +52,18 @@ func apply(car: VehicleBody3D) -> void:
 			_apply_ammo(car)
 		PowerupType.DOUBLE_DAMAGE:
 			_apply_double_damage(car)
+
+
+func _get_display_duration() -> float:
+	match powerup_type:
+		PowerupType.NITRO_SURGE:
+			return 4.0
+		PowerupType.ARMOR_PLATING:
+			return 10.0
+		PowerupType.DOUBLE_DAMAGE:
+			return 15.0
+		_:
+			return 2.0
 
 
 func _apply_nitro(car: VehicleBody3D) -> void:
@@ -81,8 +96,8 @@ func _apply_armor(car: VehicleBody3D) -> void:
 func _apply_fuel(car: VehicleBody3D) -> void:
 	## +40 fuel
 	var fuel_sys = car.get_node_or_null("FuelSystem")
-	if fuel_sys and "fuel" in fuel_sys:
-		fuel_sys.fuel = minf(fuel_sys.fuel + 40.0, fuel_sys.max_fuel)
+	if fuel_sys and fuel_sys.has_method("refuel"):
+		fuel_sys.refuel(40.0)
 
 
 func _apply_repair(car: VehicleBody3D) -> void:
@@ -149,3 +164,11 @@ func _sanitize_powerup_type() -> void:
 	if keys.is_empty():
 		return
 	powerup_type = clampi(int(powerup_type), 0, keys.size() - 1) as PowerupType
+
+
+func _get_log_kind() -> String:
+	return "powerup"
+
+
+func _get_log_detail() -> String:
+	return _get_type_display_name()
