@@ -587,36 +587,25 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="MinimapPanel" type="PanelContainer" parent="." unique_id=1210535572]
+[node name="MinimapMargin" type="MarginContainer" parent="." unique_id=356436592]
 layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -206.0
-offset_top = 20.0
-offset_right = -20.0
-offset_bottom = 206.0
-grow_horizontal = 0
-mouse_filter = 2
-theme_override_styles/panel = SubResource("sb_panel")
-
-[node name="MinimapMargin" type="MarginContainer" parent="MinimapPanel" unique_id=356436592]
-layout_mode = 2
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -93.0
+offset_right = 186.0
+offset_bottom = 93.0
+grow_vertical = 2
 theme_override_constants/margin_left = 8
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 8
 theme_override_constants/margin_bottom = 8
 
-[node name="MinimapStack" type="VBoxContainer" parent="MinimapPanel/MinimapMargin" unique_id=73589589]
+[node name="MinimapStack" type="VBoxContainer" parent="MinimapMargin" unique_id=73589589]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="MinimapHeader" type="Label" parent="MinimapPanel/MinimapMargin/MinimapStack" unique_id=1827080735]
-layout_mode = 2
-text = "MINIMAP"
-horizontal_alignment = 1
-
-[node name="MinimapCanvas" type="Control" parent="MinimapPanel/MinimapMargin/MinimapStack" unique_id=345800023]
+[node name="MinimapCanvas" type="Control" parent="MinimapMargin/MinimapStack" unique_id=345800023]
 unique_name_in_owner = true
 clip_contents = true
 custom_minimum_size = Vector2(170, 170)
@@ -625,7 +614,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 mouse_filter = 2
 
-[node name="MinimapView" type="TextureRect" parent="MinimapPanel/MinimapMargin/MinimapStack/MinimapCanvas" unique_id=619263444]
+[node name="MinimapView" type="TextureRect" parent="MinimapMargin/MinimapStack/MinimapCanvas" unique_id=619263444]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -634,9 +623,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-stretch_mode = 6
+stretch_mode = 5
 
-[node name="MinimapSubViewport" type="SubViewport" parent="MinimapPanel/MinimapMargin/MinimapStack/MinimapCanvas" unique_id=485191950]
+[node name="MinimapSubViewport" type="SubViewport" parent="MinimapMargin/MinimapStack/MinimapCanvas" unique_id=485191950]
 unique_name_in_owner = true
 transparent_bg = true
 handle_input_locally = false
@@ -644,7 +633,7 @@ msaa_3d = 1
 size = Vector2i(256, 256)
 render_target_update_mode = 4
 
-[node name="MinimapCamera" type="Camera3D" parent="MinimapPanel/MinimapMargin/MinimapStack/MinimapCanvas/MinimapSubViewport" unique_id=134885720]
+[node name="MinimapCamera" type="Camera3D" parent="MinimapMargin/MinimapStack/MinimapCanvas/MinimapSubViewport" unique_id=134885720]
 unique_name_in_owner = true
 projection = 1
 current = true
