@@ -7,10 +7,10 @@
 [ext_resource type="Script" uid="uid://dipfvvcl608ow" path="res://scripts/network/network_sync.gd" id="6_net"]
 [ext_resource type="Script" uid="uid://bkhv4rh2p3546" path="res://scripts/car/car_debug_label.gd" id="7_dbg"]
 [ext_resource type="Script" uid="uid://dmrtscrs86e71" path="res://scripts/car/car_particles.gd" id="8_particles"]
-[ext_resource type="PackedScene" path="res://scenes/particles/TireSmoke.tscn" id="9_tire_smoke"]
-[ext_resource type="PackedScene" path="res://scenes/particles/DriftSmoke.tscn" id="10_drift_smoke"]
-[ext_resource type="PackedScene" path="res://scenes/particles/CollisionSparks.tscn" id="11_sparks"]
-[ext_resource type="PackedScene" path="res://scenes/particles/Explosion.tscn" id="12_explosion"]
+[ext_resource type="PackedScene" uid="uid://djt8xsp7464h2" path="res://scenes/particles/TireSmoke.tscn" id="9_tire_smoke"]
+[ext_resource type="PackedScene" uid="uid://dedcobajwmkht" path="res://scenes/particles/DriftSmoke.tscn" id="10_drift_smoke"]
+[ext_resource type="PackedScene" uid="uid://bebrkplgqohf8" path="res://scenes/particles/CollisionSparks.tscn" id="11_sparks"]
+[ext_resource type="PackedScene" uid="uid://b5h8fseakav36" path="res://scenes/particles/Explosion.tscn" id="12_explosion"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_tn0jf"]
 friction = 0.22
@@ -83,8 +83,11 @@ script = ExtResource("3_fuel")
 [node name="DamageSystem" type="Node" parent="." unique_id=166317889]
 script = ExtResource("4_dmg")
 
-[node name="WeaponMount" type="Node3D" parent="." unique_id=475629504]
+[node name="WeaponMountPrimary" type="Node3D" parent="." unique_id=475629504]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 1.5)
+
+[node name="WeaponMountSecondary" type="Node3D" parent="." unique_id=376377253]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5829432, -2.1775723)
 
 [node name="NetworkSync" type="Node" parent="." unique_id=1872429279]
 script = ExtResource("6_net")

@@ -135,10 +135,10 @@ func _bind_target_signals(target: Node3D) -> void:
 	if target == null:
 		return
 	_damage_hp_cache.clear()
-	var collision_callable := Callable(self, "_on_target_collision_impact")
-	var weapon_callable := Callable(self, "_on_target_weapon_fired")
-	var destroyed_callable := Callable(self, "_on_target_destroyed")
-	var stalled_callable := Callable(self, "_on_target_stalled")
+	var collision_callable := Callable(self , "_on_target_collision_impact")
+	var weapon_callable := Callable(self , "_on_target_weapon_fired")
+	var destroyed_callable := Callable(self , "_on_target_destroyed")
+	var stalled_callable := Callable(self , "_on_target_stalled")
 
 	if target.has_signal("collision_impact") and not target.is_connected("collision_impact", collision_callable):
 		target.connect("collision_impact", collision_callable)
@@ -150,7 +150,7 @@ func _bind_target_signals(target: Node3D) -> void:
 		target.connect("car_stalled", stalled_callable)
 
 	var damage_node: Node = target.get_node_or_null("DamageSystem")
-	var damage_callable := Callable(self, "_on_zone_damaged")
+	var damage_callable := Callable(self , "_on_zone_damaged")
 	if damage_node and damage_node.has_signal("zone_damaged") and not damage_node.is_connected("zone_damaged", damage_callable):
 		damage_node.connect("zone_damaged", damage_callable)
 
@@ -158,10 +158,10 @@ func _bind_target_signals(target: Node3D) -> void:
 func _unbind_target_signals(target: Node3D) -> void:
 	if target == null:
 		return
-	var collision_callable := Callable(self, "_on_target_collision_impact")
-	var weapon_callable := Callable(self, "_on_target_weapon_fired")
-	var destroyed_callable := Callable(self, "_on_target_destroyed")
-	var stalled_callable := Callable(self, "_on_target_stalled")
+	var collision_callable := Callable(self , "_on_target_collision_impact")
+	var weapon_callable := Callable(self , "_on_target_weapon_fired")
+	var destroyed_callable := Callable(self , "_on_target_destroyed")
+	var stalled_callable := Callable(self , "_on_target_stalled")
 	if target.has_signal("collision_impact") and target.is_connected("collision_impact", collision_callable):
 		target.disconnect("collision_impact", collision_callable)
 	if target.has_signal("weapon_fired") and target.is_connected("weapon_fired", weapon_callable):
@@ -172,7 +172,7 @@ func _unbind_target_signals(target: Node3D) -> void:
 		target.disconnect("car_stalled", stalled_callable)
 
 	var damage_node: Node = target.get_node_or_null("DamageSystem")
-	var damage_callable := Callable(self, "_on_zone_damaged")
+	var damage_callable := Callable(self , "_on_zone_damaged")
 	if damage_node and damage_node.has_signal("zone_damaged") and damage_node.is_connected("zone_damaged", damage_callable):
 		damage_node.disconnect("zone_damaged", damage_callable)
 
@@ -217,7 +217,7 @@ func _physics_process(_delta: float) -> void:
 
 
 func _setup_glare_card() -> void:
-	if not glare_enabled: 
+	if not glare_enabled:
 		return
 	if _glare_mesh_instance and is_instance_valid(_glare_mesh_instance):
 		return
@@ -271,7 +271,7 @@ func _find_directional_light(root: Node) -> DirectionalLight3D:
 
 
 func _update_glare_light_dir() -> void:
-	if not glare_enabled: 
+	if not glare_enabled:
 		return
 	if _glare_mesh_instance == null or not is_instance_valid(_glare_mesh_instance):
 		return

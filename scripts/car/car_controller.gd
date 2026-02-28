@@ -1,6 +1,8 @@
 extends VehicleBody3D
 class_name Car
 
+const EMP_LIGHTNING_SHADER: Shader = preload("res://resources/emp_lightning.gdshader")
+
 ## Main vehicle controller — input, steering, acceleration, boost.
 ## Integrates with child DriftSystem, FuelSystem, DamageSystem nodes.
 
@@ -30,6 +32,11 @@ signal powerup_ended(powerup_id: String)
 @export var boost_meter_max: float = 100.0
 @export var boost_drain_rate: float = 30.0
 
+@export_group("EMP FX")
+@export var emp_fx_intensity: float = 1.0
+@export var emp_fx_random_scale: float = 4.6
+@export var emp_fx_speed: float = 5.1
+
 # ---------- State ----------
 var boost_meter: float = 0.0
 var is_boosting: bool = false
@@ -43,6 +50,9 @@ var current_speed_kmh: float = 0.0
 var _steer_current: float = 0.0
 var _collision_signal_cooldown: float = 0.0
 var active_powerups: Dictionary = {} # String -> {duration: float, remaining: float}
+var _emp_fx_active: bool = false
+var _emp_meshes: Array[MeshInstance3D] = []
+var _emp_original_overlays: Dictionary = {}
 
 # ---------- Weapons ----------
 var primary_weapon: WeaponBase = null
@@ -56,7 +66,8 @@ var secondary_weapon: WeaponBase = null
 @onready var front_right_wheel: VehicleWheel3D = $FrontRight
 @onready var rear_left_wheel: VehicleWheel3D = $RearLeft
 @onready var rear_right_wheel: VehicleWheel3D = $RearRight
-@onready var weapon_mount: Node3D = $WeaponMount
+@onready var weapon_mount_primary: Node3D = $WeaponMountPrimary
+@onready var weapon_mount_secondary: Node3D = $WeaponMountSecondary
 
 
 func _ready() -> void:
@@ -73,6 +84,7 @@ func _ready() -> void:
 	if not is_player:
 		if fuel_system:
 			fuel_system.set_physics_process(false)
+	_cache_emp_meshes()
 
 
 func _physics_process(delta: float) -> void:
@@ -91,6 +103,7 @@ func _physics_process(delta: float) -> void:
 		brake = max_brake_force * 0.5
 		if _emp_timer <= 0.0:
 			is_emp_disabled = false
+			_set_emp_fx(false)
 		return
 
 	current_speed_kmh = linear_velocity.length() * 3.6
@@ -194,23 +207,24 @@ func _handle_weapons() -> void:
 
 
 func equip_weapon(weapon: WeaponBase) -> void:
-	# Add to tree first so _ready() sets mount_type
+	# Ensure the weapon enters the tree so subclasses that set mount_type in _ready() are initialized.
 	weapon.owner_car = self
-	if weapon.get_parent():
-		weapon.reparent(weapon_mount)
-	else:
-		weapon_mount.add_child(weapon)
+	if not weapon.is_inside_tree():
+		add_child(weapon)
 
-	# Now check slot (mount_type is set by _ready)
-	var slot := weapon.mount_type
+	var slot: WeaponBase.MountType = weapon.mount_type
 	if slot == WeaponBase.MountType.PRIMARY:
 		if primary_weapon and primary_weapon != weapon:
 			drop_weapon(WeaponBase.MountType.PRIMARY)
 		primary_weapon = weapon
+		if primary_weapon.get_parent() != weapon_mount_primary:
+			primary_weapon.reparent(weapon_mount_primary)
 	else:
 		if secondary_weapon and secondary_weapon != weapon:
 			drop_weapon(WeaponBase.MountType.SECONDARY)
 		secondary_weapon = weapon
+		if secondary_weapon.get_parent() != weapon_mount_secondary:
+			secondary_weapon.reparent(weapon_mount_secondary)
 
 
 func drop_weapon(slot: WeaponBase.MountType) -> void:
@@ -228,6 +242,7 @@ func drop_weapon(slot: WeaponBase.MountType) -> void:
 func apply_emp(duration: float) -> void:
 	is_emp_disabled = true
 	_emp_timer = duration
+	_set_emp_fx(true)
 
 
 func get_emp_remaining() -> float:
@@ -285,12 +300,45 @@ func _tick_powerups(delta: float) -> void:
 
 func _on_car_destroyed() -> void:
 	is_alive = false
+	_set_emp_fx(false)
 	car_destroyed.emit(self )
 
 
 func _on_fuel_empty() -> void:
 	is_alive = false
+	_set_emp_fx(false)
 	car_stalled.emit(self )
+
+
+func _cache_emp_meshes() -> void:
+	var mesh_nodes: Array[Node] = find_children("*", "MeshInstance3D", true, false)
+	for node in mesh_nodes:
+		var mesh: MeshInstance3D = node as MeshInstance3D
+		if mesh == null:
+			continue
+		_emp_meshes.append(mesh)
+		_emp_original_overlays[mesh] = mesh.material_overlay
+
+
+func _set_emp_fx(enabled: bool) -> void:
+	if enabled == _emp_fx_active:
+		return
+	_emp_fx_active = enabled
+
+	for mesh in _emp_meshes:
+		if not is_instance_valid(mesh):
+			continue
+		if enabled:
+			var mat: ShaderMaterial = ShaderMaterial.new()
+			mat.shader = EMP_LIGHTNING_SHADER
+			var seed_value: float = float(mesh.get_instance_id() % 997) / 997.0
+			mat.set_shader_parameter("seed", Vector2(seed_value, 1.0 - seed_value))
+			mat.set_shader_parameter("speed", emp_fx_speed)
+			mat.set_shader_parameter("random_scale", emp_fx_random_scale)
+			mat.set_shader_parameter("intensity", emp_fx_intensity)
+			mesh.material_overlay = mat
+		else:
+			mesh.material_overlay = _emp_original_overlays.get(mesh, null)
 
 
 func _on_body_entered(body: Node) -> void:

@@ -8,7 +8,7 @@ signal match_ended(winner_name: String)
 
 const WreckScene := preload("res://scenes/vehicles/CarWreck.tscn")
 const WeaponScene := preload("res://scenes/weapons/HarpoonLauncher.tscn")
-const WeaponScene2 := preload("res://scenes/weapons/MineLayer.tscn")
+const WeaponScene2 := preload("res://scenes/weapons/EMPBlaster.tscn")
 const DefaultSpawnPointsScene := preload("res://scenes/game/SpawnPoints.tscn")
 
 # Must match the order in weapon_pickup.gd _weapon_scenes

@@ -6,6 +6,10 @@
 radius = 0.8
 height = 0.3
 
+[sub_resource type="SphereMesh" id="SphereMesh_impact_zone"]
+radius = 1.0
+height = 2.0
+
 [sub_resource type="StandardMaterial3D" id="Mat_emp"]
 albedo_color = Color(0.2, 0.4, 0.9, 1)
 metallic = 0.8
@@ -20,3 +24,8 @@ script = ExtResource("1_emp")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.4)
 mesh = SubResource("SphereMesh_dish")
 surface_material_override/0 = SubResource("Mat_emp")
+
+[node name="ImpactZoneSphere" type="MeshInstance3D" parent="." unique_id=327560114]
+mesh = SubResource("SphereMesh_impact_zone")
+cast_shadow = 0
+visible = false
