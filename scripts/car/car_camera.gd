@@ -35,6 +35,12 @@ const SHAKE_GROUP := "camera_shake_listener"
 @export var recoil_pitch_kick_limit_deg: float = 4.0
 @export var recoil_pitch_return_speed: float = 10.0
 
+@export_group("Glare Card")
+@export var glare_enabled: bool = false
+@export var glare_shader_path: String = "res://resources/glare.gdshader"
+@export var light_source_path: NodePath = NodePath("")
+@export var glare_distance: float = 0.3
+
 var _target: Node3D
 var _phantom_camera: Node = null
 var _shake_emitter: PhantomCameraNoiseEmitter3D = null
@@ -44,11 +50,16 @@ var _current_pitch_rad: float = 0.0
 var _rotation_initialized: bool = false
 var _damage_hp_cache: Dictionary = {}
 var _recoil_pitch_offset_deg: float = 0.0
+var _glare_mesh_instance: MeshInstance3D = null
+var _light_source: DirectionalLight3D = null
 
 
 func _ready() -> void:
 	add_to_group(SHAKE_GROUP)
 	_ensure_shake_emitter()
+	_setup_glare_card()
+	_resolve_light_source()
+	_update_glare_light_dir()
 
 	_phantom_camera = get_node_or_null(phantom_camera_path)
 	if _phantom_camera == null:
@@ -183,6 +194,8 @@ func _emit_shake(amplitude: float, frequency: float, duration: float, growth: fl
 
 
 func _physics_process(_delta: float) -> void:
+	_update_glare_light_dir()
+
 	if _target == null or _phantom_camera == null:
 		return
 
@@ -201,6 +214,72 @@ func _physics_process(_delta: float) -> void:
 
 	var chase_rotation := Vector3(rad_to_deg(_current_pitch_rad), rad_to_deg(_current_yaw_rad), 0.0)
 	_phantom_camera.call("set_third_person_rotation_degrees", chase_rotation)
+
+
+func _setup_glare_card() -> void:
+	if not glare_enabled: 
+		return
+	if _glare_mesh_instance and is_instance_valid(_glare_mesh_instance):
+		return
+
+	var glare_shader: Shader = load(glare_shader_path)
+	if glare_shader == null:
+		push_warning("Could not load glare shader at path: %s" % glare_shader_path)
+		return
+
+	var quad := QuadMesh.new()
+	quad.size = Vector2(2.0, 2.0)
+
+	var material := ShaderMaterial.new()
+	material.shader = glare_shader
+
+	_glare_mesh_instance = MeshInstance3D.new()
+	_glare_mesh_instance.name = "GlareCard"
+	_glare_mesh_instance.mesh = quad
+	_glare_mesh_instance.material_override = material
+	_glare_mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_glare_mesh_instance.position = Vector3(0.0, 0.0, -absf(glare_distance))
+	add_child(_glare_mesh_instance)
+
+
+func _resolve_light_source() -> void:
+	_light_source = null
+	if light_source_path != NodePath(""):
+		var explicit_light := get_node_or_null(light_source_path)
+		if explicit_light is DirectionalLight3D:
+			_light_source = explicit_light
+			return
+		if explicit_light != null:
+			push_warning("Node at light_source_path is not a DirectionalLight3D: %s" % light_source_path)
+
+	var scene_root: Node = get_tree().current_scene
+	if scene_root == null:
+		scene_root = get_tree().root
+	_light_source = _find_directional_light(scene_root)
+	if _light_source == null:
+		push_warning("No DirectionalLight3D found for glare light_world_dir.")
+
+
+func _find_directional_light(root: Node) -> DirectionalLight3D:
+	if root is DirectionalLight3D:
+		return root
+	for child in root.get_children():
+		var found: DirectionalLight3D = _find_directional_light(child)
+		if found:
+			return found
+	return null
+
+
+func _update_glare_light_dir() -> void:
+	if not glare_enabled: 
+		return
+	if _glare_mesh_instance == null or not is_instance_valid(_glare_mesh_instance):
+		return
+	if _light_source == null or not is_instance_valid(_light_source):
+		_resolve_light_source()
+	if _light_source == null:
+		return
+	_glare_mesh_instance.set_instance_shader_parameter("light_world_dir", -_light_source.global_transform.basis.z)
 
 
 func _get_desired_yaw_rad() -> float:
@@ -267,7 +346,7 @@ func _on_target_stalled(_car: Node) -> void:
 	_emit_shake(1.1, 7.5, 0.12, 0.0, 0.2)
 
 
-func camera_shake_explosion(world_position: Vector3, scale: float = 1.0) -> void:
+func camera_shake_explosion(world_position: Vector3, strength_scale: float = 1.0) -> void:
 	if not shake_enabled:
 		return
 
@@ -281,5 +360,5 @@ func camera_shake_explosion(world_position: Vector3, scale: float = 1.0) -> void
 		return
 
 	var falloff: float = pow(normalized, explosion_distance_falloff)
-	var strength: float = maxf(scale, 0.25) * falloff
+	var strength: float = maxf(strength_scale, 0.25) * falloff
 	_emit_shake(1.2 + strength * 3.0, 7.5 + strength * 3.0, 0.16 + strength * 0.12, 0.0, 0.25 + strength * 0.2)

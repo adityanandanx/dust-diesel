@@ -29,6 +29,7 @@ script = ExtResource("5_spawner")
 transform = Transform3D(1, 0, 0, 0, 0.882948, -0.469472, 0, 0.469472, 0.882948, 0, 2.2, 0)
 top_level = true
 script = ExtResource("6_cam")
+follow_offset = Vector3(0, 2, 0)
 rotation_smoothing_speed = 4.0
 
 [node name="PhantomCameraHost" type="Node" parent="TopDownCamera" unique_id=2026455503]
