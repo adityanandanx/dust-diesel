@@ -1,0 +1,13 @@
+{
+  "servers": {
+    "godot": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/home/aditya/clones/godot-mcp/build/index.js"],
+      "env": {
+        "DEBUG": "true"
+      }
+    }
+  },
+  "inputs": []
+}
