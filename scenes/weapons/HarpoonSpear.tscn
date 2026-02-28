@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://d2fv7axrxqnqb"]
 
-[ext_resource type="Script" uid="uid://cja2xkmiyt17s" path="res://scripts/weapons/projectile_base.gd" id="1_proj"]
+[ext_resource type="Script" path="res://scripts/weapons/harpoon_spear.gd" id="1_harpoon"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_spear"]
 radius = 0.08
@@ -14,10 +14,10 @@ height = 1.0
 [node name="HarpoonSpear" type="CharacterBody3D" unique_id=1146178399]
 collision_layer = 4
 collision_mask = 3
-script = ExtResource("1_proj")
+script = ExtResource("1_harpoon")
 speed = 50.0
 damage = 15.0
-max_bounces = 4
+lifetime = 6.0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=516297434]
 shape = SubResource("CapsuleShape3D_spear")
