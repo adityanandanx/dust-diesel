@@ -65,6 +65,7 @@ var _debug_overlay_label: Label = null
 var _powerup_rows: Dictionary = {}
 var _minimap_dots: Dictionary = {}
 var _minimap_heading_dir: Vector2 = Vector2(0.0, -1.0)
+var _minimap_env_applied: bool = false
 
 var _part_textures: Dictionary = {}
 var _weapon_textures: Dictionary = {}
@@ -80,6 +81,7 @@ func _ready() -> void:
 	_setup_minimap_view()
 	if not minimap_canvas.resized.is_connected(_on_minimap_canvas_resized):
 		minimap_canvas.resized.connect(_on_minimap_canvas_resized)
+	call_deferred("_ensure_minimap_environment")
 
 
 func bind_car(car: Car) -> void:
@@ -116,6 +118,7 @@ func _process(delta: float) -> void:
 	_update_weapon_panels()
 	_update_vehicle_health_panel()
 	_update_powerup_rows()
+	_ensure_minimap_environment()
 	_update_minimap_camera(delta)
 	_update_minimap()
 
@@ -180,6 +183,37 @@ func _setup_minimap_view() -> void:
 	if minimap_camera:
 		minimap_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 		minimap_camera.size = minimap_world_radius * 2.0
+		_ensure_minimap_environment()
+
+
+func _ensure_minimap_environment() -> void:
+	if _minimap_env_applied:
+		return
+	if minimap_camera == null:
+		return
+	var world: World3D = get_viewport().world_3d
+	if world == null:
+		return
+
+	var source_env: Environment = world.environment
+	var minimap_env: Environment
+	if source_env:
+		minimap_env = source_env.duplicate() as Environment
+	else:
+		minimap_env = Environment.new()
+	if minimap_env == null:
+		return
+	minimap_env.fog_enabled = false
+	minimap_env.volumetric_fog_enabled = false
+	# Keep a readable minimap even when source environment is unavailable.
+	if not source_env:
+		minimap_env.background_mode = Environment.BG_COLOR
+		minimap_env.background_color = Color(0.06, 0.08, 0.1, 1.0)
+		minimap_env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+		minimap_env.ambient_light_color = Color(0.9, 0.9, 0.9, 1.0)
+		minimap_env.ambient_light_energy = 1.0
+	minimap_camera.environment = minimap_env
+	_minimap_env_applied = true
 
 
 func _make_minimap_circle_material() -> ShaderMaterial:
@@ -248,12 +282,12 @@ func _update_minimap() -> void:
 	if minimap_camera == null or minimap_subviewport == null:
 		return
 
-	var size: Vector2 = minimap_canvas.size
-	if size.x <= 1.0 or size.y <= 1.0:
+	var canvas_size: Vector2 = minimap_canvas.size
+	if canvas_size.x <= 1.0 or canvas_size.y <= 1.0:
 		return
 
-	var center_px: Vector2 = size * 0.5
-	var map_radius_px: float = minf(size.x, size.y) * 0.5 - 6.0
+	var center_px: Vector2 = canvas_size * 0.5
+	var map_radius_px: float = minf(canvas_size.x, canvas_size.y) * 0.5 - 6.0
 	var vp_size: Vector2 = Vector2(minimap_subviewport.size)
 	if vp_size.x <= 1.0 or vp_size.y <= 1.0:
 		return
@@ -281,7 +315,7 @@ func _update_minimap() -> void:
 		var uv: Vector2 = Vector2(projected.x / vp_size.x, projected.y / vp_size.y)
 		uv.x = clampf(uv.x, 0.0, 1.0)
 		uv.y = clampf(uv.y, 0.0, 1.0)
-		var local_px: Vector2 = Vector2(uv.x * size.x, uv.y * size.y)
+		var local_px: Vector2 = Vector2(uv.x * canvas_size.x, uv.y * canvas_size.y)
 		var offset_px: Vector2 = local_px - center_px
 		if offset_px.length() > map_radius_px:
 			offset_px = offset_px.normalized() * map_radius_px
@@ -612,11 +646,11 @@ func _make_stylebox(color: Color) -> StyleBoxFlat:
 	return sb
 
 
-func _make_placeholder_texture(base: Color, accent: Color, size: Vector2i) -> Texture2D:
-	var image := Image.create(size.x, size.y, false, Image.FORMAT_RGBA8)
+func _make_placeholder_texture(base: Color, accent: Color, tex_size: Vector2i) -> Texture2D:
+	var image := Image.create(tex_size.x, tex_size.y, false, Image.FORMAT_RGBA8)
 	image.fill(base)
-	for y in range(size.y):
-		for x in range(size.x):
+	for y in range(tex_size.y):
+		for x in range(tex_size.x):
 			if ((x + y) % 7) < 3:
 				image.set_pixel(x, y, accent)
 	return ImageTexture.create_from_image(image)

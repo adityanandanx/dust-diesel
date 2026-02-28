@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://o807xcpaypqo" path="res://assets/models/kenney_city-kit-commercial_2.1/Models/GLB format/building-f.glb" id="5_bf"]
 [ext_resource type="PackedScene" uid="uid://bfg845stp4eql" path="res://assets/models/kenney_city-kit-commercial_2.1/Models/GLB format/building-j.glb" id="6_bj"]
 [ext_resource type="PackedScene" uid="uid://kcjpxw4yolpd" path="res://assets/models/kenney_city-kit-commercial_2.1/Models/GLB format/building-skyscraper-b.glb" id="7_sb"]
-[ext_resource type="PackedScene" path="res://scenes/environment/FuelBarrel.tscn" id="9_fb"]
+[ext_resource type="PackedScene" uid="uid://d4dvnsnq7p8t6" path="res://scenes/environment/FuelBarrel.tscn" id="9_fb"]
 [ext_resource type="PackedScene" path="res://scenes/environment/ScrapPile.tscn" id="10_sp"]
 [ext_resource type="PackedScene" uid="uid://bxiu3bbjokmyv" path="res://assets/models/kenney_city-kit-commercial_2.1/Models/GLB format/building-skyscraper-a.glb" id="10_uduhd"]
 [ext_resource type="PackedScene" path="res://scenes/environment/AbandonedVehicle.tscn" id="11_av"]
@@ -20,6 +20,23 @@
 [ext_resource type="PackedScene" uid="uid://cw6so5xke5lsx" path="res://assets/models/kenney_city-kit-commercial_2.1/Models/GLB format/building-d.glb" id="27_fcpbv"]
 [ext_resource type="PackedScene" uid="uid://cjce0bpmoj8qk" path="res://assets/models/kenney_city-kit-commercial_2.1/Models/GLB format/building-e.glb" id="28_555av"]
 
+[sub_resource type="Curve" id="Curve_e3cqr"]
+_data = [Vector2(0, 0), 0.0, 0.37270525, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_0f0k3"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_i5vjl"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(1, 1), 2.251204, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveXYZTexture" id="CurveXYZTexture_m1aal"]
+curve_x = SubResource("Curve_e3cqr")
+curve_y = SubResource("Curve_0f0k3")
+curve_z = SubResource("Curve_i5vjl")
+
 [sub_resource type="ProceduralSkyMaterial" id="1"]
 sky_top_color = Color(0.32, 0.41, 0.55, 1)
 sky_horizon_color = Color(0.95, 0.95, 0.95, 1)
@@ -31,6 +48,15 @@ sky_material = SubResource("1")
 [sub_resource type="Environment" id="3"]
 background_mode = 2
 sky = SubResource("2")
+glow_enabled = true
+glow_bloom = 1.0
+fog_enabled = true
+fog_mode = 1
+fog_light_energy = 0.1
+fog_density = 1.0
+adjustment_enabled = true
+adjustment_contrast = 1.25
+adjustment_color_correction = SubResource("CurveXYZTexture_m1aal")
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_r0471"]
 size = Vector3(80, 30, 60)
@@ -1464,4 +1490,4 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -27, 0.5, 18)
 [node name="P16" type="Marker3D" parent="PickupPoints" unique_id=258508703]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23, 0.5, 22)
 
-[node name="city-src" parent="." unique_id=1596516751 instance=ExtResource("22_m1aal")]
+[node name="city-src" parent="." unique_id=321097824 instance=ExtResource("22_m1aal")]
