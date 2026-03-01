@@ -1,29 +1,28 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bi327iepwcdsb"]
 
-[ext_resource type="Script" path="res://scripts/ui/match_end_dialog.gd" id="1_match_end"]
+[ext_resource type="Script" uid="uid://b5luwucyhxmvc" path="res://scripts/ui/match_end_dialog.gd" id="1_match_end"]
 
 [sub_resource type="StyleBoxFlat" id="sb_panel"]
+content_margin_left = 22.0
+content_margin_top = 18.0
+content_margin_right = 22.0
+content_margin_bottom = 18.0
 bg_color = Color(0.09, 0.08, 0.06, 0.95)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-content_margin_left = 22.0
-content_margin_top = 18.0
-content_margin_right = 22.0
-content_margin_bottom = 18.0
 
-[node name="MatchEndDialog" type="Control"]
+[node name="MatchEndDialog" type="Control" unique_id=1397480755]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
 script = ExtResource("1_match_end")
 
-[node name="Dim" type="ColorRect" parent="."]
+[node name="Dim" type="ColorRect" parent="." unique_id=895852002]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -33,7 +32,7 @@ grow_vertical = 2
 mouse_filter = 1
 color = Color(0.03, 0.03, 0.03, 0.72)
 
-[node name="Panel" type="PanelContainer" parent="."]
+[node name="Panel" type="PanelContainer" parent="." unique_id=1019099421]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -46,161 +45,154 @@ offset_right = 280.0
 offset_bottom = 270.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
 theme_override_styles/panel = SubResource("sb_panel")
 
-[node name="VBox" type="VBoxContainer" parent="Panel"]
+[node name="VBox" type="VBoxContainer" parent="Panel" unique_id=820664024]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="TitleLabel" type="Label" parent="Panel/VBox"]
+[node name="TitleLabel" type="Label" parent="Panel/VBox" unique_id=664347102]
 unique_name_in_owner = true
 layout_mode = 2
-horizontal_alignment = 1
-theme_override_font_sizes/font_size = 30
 theme_override_colors/font_color = Color(1, 0.94, 0.75, 1)
+theme_override_font_sizes/font_size = 30
 text = "WINNER"
+horizontal_alignment = 1
 
-[node name="WinnersScroll" type="ScrollContainer" parent="Panel/VBox"]
+[node name="WinnersScroll" type="ScrollContainer" parent="Panel/VBox" unique_id=1120436013]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="WinnersLabel" type="Label" parent="Panel/VBox/WinnersScroll"]
+[node name="WinnersLabel" type="Label" parent="Panel/VBox/WinnersScroll" unique_id=860382242]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-autowrap_mode = 1
-horizontal_alignment = 1
 text = "TBD"
+horizontal_alignment = 1
+autowrap_mode = 1
 
-[node name="Sep1" type="HSeparator" parent="Panel/VBox"]
+[node name="Sep1" type="HSeparator" parent="Panel/VBox" unique_id=1912628700]
 layout_mode = 2
 
-[node name="ScoreboardHeader" type="Label" parent="Panel/VBox"]
+[node name="ScoreboardHeader" type="Label" parent="Panel/VBox" unique_id=1577004871]
 layout_mode = 2
-horizontal_alignment = 0
 text = "SCOREBOARD"
 
-[node name="ScoreboardScroll" type="ScrollContainer" parent="Panel/VBox"]
+[node name="ScoreboardScroll" type="ScrollContainer" parent="Panel/VBox" unique_id=1570072782]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="ScoreboardLabel" type="Label" parent="Panel/VBox/ScoreboardScroll"]
+[node name="ScoreboardLabel" type="Label" parent="Panel/VBox/ScoreboardScroll" unique_id=1834384657]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-horizontal_alignment = 0
-vertical_alignment = 0
-autowrap_mode = 1
-theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.94, 0.9, 0.78, 1)
+theme_override_font_sizes/font_size = 20
 text = "No scores yet."
+autowrap_mode = 1
 
-[node name="Sep2" type="HSeparator" parent="Panel/VBox"]
+[node name="Sep2" type="HSeparator" parent="Panel/VBox" unique_id=1936037589]
 layout_mode = 2
 
-[node name="SettingsTitle" type="Label" parent="Panel/VBox"]
+[node name="SettingsTitle" type="Label" parent="Panel/VBox" unique_id=1247631498]
 layout_mode = 2
-horizontal_alignment = 0
 theme_override_colors/font_color = Color(0.94, 0.88, 0.7, 0.95)
 text = "NEXT ROUND SETTINGS (HOST)"
 
-[node name="SettingsBox" type="VBoxContainer" parent="Panel/VBox"]
+[node name="SettingsBox" type="VBoxContainer" parent="Panel/VBox" unique_id=344516718]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="ModeRow" type="HBoxContainer" parent="Panel/VBox/SettingsBox"]
+[node name="ModeRow" type="HBoxContainer" parent="Panel/VBox/SettingsBox" unique_id=648291055]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="ModeLabel" type="Label" parent="Panel/VBox/SettingsBox/ModeRow"]
-layout_mode = 2
+[node name="ModeLabel" type="Label" parent="Panel/VBox/SettingsBox/ModeRow" unique_id=1341780620]
 custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
 text = "MODE"
 
-[node name="ModeSelector" type="OptionButton" parent="Panel/VBox/SettingsBox/ModeRow"]
+[node name="ModeSelector" type="OptionButton" parent="Panel/VBox/SettingsBox/ModeRow" unique_id=2129788976]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TimeRow" type="HBoxContainer" parent="Panel/VBox/SettingsBox"]
+[node name="TimeRow" type="HBoxContainer" parent="Panel/VBox/SettingsBox" unique_id=1280223383]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="TimeLabel" type="Label" parent="Panel/VBox/SettingsBox/TimeRow"]
-layout_mode = 2
+[node name="TimeLabel" type="Label" parent="Panel/VBox/SettingsBox/TimeRow" unique_id=1522764190]
 custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
 text = "TIME (MIN)"
 
-[node name="TimeSpin" type="SpinBox" parent="Panel/VBox/SettingsBox/TimeRow"]
+[node name="TimeSpin" type="SpinBox" parent="Panel/VBox/SettingsBox/TimeRow" unique_id=630860028]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 min_value = 1.0
 max_value = 60.0
-step = 1.0
+value = 1.0
 rounded = true
 
-[node name="MapRow" type="HBoxContainer" parent="Panel/VBox/SettingsBox"]
+[node name="MapRow" type="HBoxContainer" parent="Panel/VBox/SettingsBox" unique_id=1306742957]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="MapLabel" type="Label" parent="Panel/VBox/SettingsBox/MapRow"]
-layout_mode = 2
+[node name="MapLabel" type="Label" parent="Panel/VBox/SettingsBox/MapRow" unique_id=1322156496]
 custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
 text = "MAP"
 
-[node name="MapSelector" type="OptionButton" parent="Panel/VBox/SettingsBox/MapRow"]
+[node name="MapSelector" type="OptionButton" parent="Panel/VBox/SettingsBox/MapRow" unique_id=1212682519]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="BotsRow" type="HBoxContainer" parent="Panel/VBox/SettingsBox"]
+[node name="BotsRow" type="HBoxContainer" parent="Panel/VBox/SettingsBox" unique_id=490524159]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="BotsLabel" type="Label" parent="Panel/VBox/SettingsBox/BotsRow"]
-layout_mode = 2
+[node name="BotsLabel" type="Label" parent="Panel/VBox/SettingsBox/BotsRow" unique_id=1662778801]
 custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
 text = "BOTS"
 
-[node name="BotsSpin" type="SpinBox" parent="Panel/VBox/SettingsBox/BotsRow"]
+[node name="BotsSpin" type="SpinBox" parent="Panel/VBox/SettingsBox/BotsRow" unique_id=2008690133]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-min_value = 0.0
 max_value = 16.0
-step = 1.0
 rounded = true
 
-[node name="WaitingLabel" type="Label" parent="Panel/VBox"]
+[node name="WaitingLabel" type="Label" parent="Panel/VBox" unique_id=1445255677]
 unique_name_in_owner = true
-layout_mode = 2
-horizontal_alignment = 1
-theme_override_colors/font_color = Color(0.95, 0.92, 0.78, 0.95)
 visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.92, 0.78, 0.95)
 text = "Waiting for host..."
+horizontal_alignment = 1
 
-[node name="ButtonRow" type="HBoxContainer" parent="Panel/VBox"]
+[node name="ButtonRow" type="HBoxContainer" parent="Panel/VBox" unique_id=851563369]
 layout_mode = 2
-alignment = 1
 theme_override_constants/separation = 12
+alignment = 1
 
-[node name="RejoinRestartButton" type="Button" parent="Panel/VBox/ButtonRow"]
+[node name="RejoinRestartButton" type="Button" parent="Panel/VBox/ButtonRow" unique_id=211632400]
 unique_name_in_owner = true
-layout_mode = 2
 custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
 text = "REJOIN"
 
-[node name="BackButton" type="Button" parent="Panel/VBox/ButtonRow"]
+[node name="BackButton" type="Button" parent="Panel/VBox/ButtonRow" unique_id=855109944]
 unique_name_in_owner = true
-layout_mode = 2
 custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
 text = "BACK TO MENU"

@@ -31,7 +31,7 @@ enabled=PackedStringArray("res://addons/phantom_camera/plugin.cfg")
 [gui]
 
 theme/custom="uid://bnhngmri4tfgr"
-theme/custom_font="uid://brpeo5ryhl3u0"
+theme/custom_font="uid://1a4sxdy6o51y"
 
 [input]
 
@@ -79,6 +79,7 @@ fire_secondary={
 [physics]
 
 3d/physics_engine="Jolt Physics"
+common/physics_interpolation=true
 
 [rendering]
 

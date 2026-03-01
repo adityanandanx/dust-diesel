@@ -5,12 +5,12 @@
 [ext_resource type="Script" uid="uid://bmdglrejhr7d8" path="res://scripts/car/car_fuel.gd" id="3_fuel"]
 [ext_resource type="Script" uid="uid://bu0i2u81i0o6c" path="res://scripts/car/car_damage.gd" id="4_dmg"]
 [ext_resource type="Script" uid="uid://dipfvvcl608ow" path="res://scripts/network/network_sync.gd" id="6_net"]
-[ext_resource type="Script" uid="uid://bkhv4rh2p3546" path="res://scripts/car/car_debug_label.gd" id="7_dbg"]
 [ext_resource type="Script" uid="uid://dmrtscrs86e71" path="res://scripts/car/car_particles.gd" id="8_particles"]
 [ext_resource type="PackedScene" uid="uid://djt8xsp7464h2" path="res://scenes/particles/TireSmoke.tscn" id="9_tire_smoke"]
 [ext_resource type="PackedScene" uid="uid://dedcobajwmkht" path="res://scenes/particles/DriftSmoke.tscn" id="10_drift_smoke"]
 [ext_resource type="PackedScene" uid="uid://bebrkplgqohf8" path="res://scenes/particles/CollisionSparks.tscn" id="11_sparks"]
 [ext_resource type="PackedScene" uid="uid://b5h8fseakav36" path="res://scenes/particles/Explosion.tscn" id="12_explosion"]
+[ext_resource type="PackedScene" path="res://scenes/ui/VehicleHealthBar3D.tscn" id="13_healthbar"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_tn0jf"]
 friction = 0.22
@@ -92,10 +92,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5829432, -2.1775723)
 [node name="NetworkSync" type="Node" parent="." unique_id=1872429279]
 script = ExtResource("6_net")
 
-[node name="DebugLabel" type="Label3D" parent="." unique_id=62709717]
-pixel_size = 0.0145
-billboard = 1
-script = ExtResource("7_dbg")
+[node name="HealthBar3D" parent="." instance=ExtResource("13_healthbar")]
 
 [node name="ParticleSystem" type="Node" parent="." unique_id=187606830]
 script = ExtResource("8_particles")
