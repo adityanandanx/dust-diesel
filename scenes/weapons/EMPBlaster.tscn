@@ -20,8 +20,15 @@ height = 2.0
 
 [node name="EMPBlaster" type="Node3D" unique_id=1760965934]
 script = ExtResource("1_emp")
+mount_type = 1
+fire_rate = 0.2
+damage = 0.0
+max_ammo = -1
+reload_type = 2
+recoil_impulse = 65.0
+recoil_torque_impulse = 4.0
 
-[node name="emp_blaster2" parent="." unique_id=1240690752 instance=ExtResource("2_kixmi")]
+[node name="emp_blaster2" parent="." unique_id=1441492731 instance=ExtResource("2_kixmi")]
 
 [node name="Dish" type="MeshInstance3D" parent="." unique_id=2107096173]
 mesh = SubResource("SphereMesh_dish")

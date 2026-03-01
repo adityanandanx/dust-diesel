@@ -66,6 +66,7 @@ var _powerup_rows: Dictionary = {}
 var _minimap_dots: Dictionary = {}
 var _minimap_heading_dir: Vector2 = Vector2(0.0, -1.0)
 var _minimap_env_applied: bool = false
+var _respawn_countdown_label: Label = null
 
 var _part_textures: Dictionary = {}
 var _weapon_textures: Dictionary = {}
@@ -77,6 +78,7 @@ func _ready() -> void:
 	add_to_group("hud_log_feed")
 	_ensure_debug_overlay_label()
 	_ensure_crosshair()
+	_ensure_respawn_countdown_label()
 	_set_debug_overlay_visible(debug_overlay_enabled)
 	_build_placeholder_textures()
 	_apply_static_placeholder_textures()
@@ -173,6 +175,20 @@ func add_pickup_log(car_name: String, pickup_kind: String, detail: String = "") 
 	if not detail_text.is_empty():
 		msg += " collected %s" % detail_text
 	add_log_entry(msg, Color(0.72, 0.95, 0.7))
+
+
+func show_respawn_countdown(seconds_left: int) -> void:
+	_ensure_respawn_countdown_label()
+	if _respawn_countdown_label == null:
+		return
+	var secs: int = maxi(seconds_left, 0)
+	_respawn_countdown_label.text = "RESPAWN IN %d" % secs
+	_respawn_countdown_label.visible = true
+
+
+func hide_respawn_countdown() -> void:
+	if _respawn_countdown_label:
+		_respawn_countdown_label.visible = false
 
 
 func _setup_minimap_view() -> void:
@@ -742,6 +758,27 @@ func _ensure_debug_overlay_label() -> void:
 	_debug_overlay_label.modulate = Color(0.95, 1.0, 0.85, 0.95)
 	_debug_overlay_label.add_theme_font_size_override("font_size", debug_overlay_font_size)
 	add_child(_debug_overlay_label)
+
+
+func _ensure_respawn_countdown_label() -> void:
+	if _respawn_countdown_label:
+		return
+	var label := Label.new()
+	label.name = "RespawnCountdown"
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.set_anchors_preset(Control.PRESET_CENTER)
+	label.size = Vector2(420.0, 64.0)
+	label.position = Vector2(-210.0, -32.0)
+	label.modulate = Color(1.0, 0.92, 0.72, 0.95)
+	label.add_theme_font_size_override("font_size", 42)
+	label.add_theme_color_override("font_shadow_color", Color(0.05, 0.05, 0.05, 0.9))
+	label.add_theme_constant_override("shadow_offset_x", 2)
+	label.add_theme_constant_override("shadow_offset_y", 2)
+	label.visible = false
+	add_child(label)
+	_respawn_countdown_label = label
 
 
 func _set_debug_overlay_visible(visible_state: bool) -> void:

@@ -4,29 +4,12 @@ extends WeaponBase
 
 @export var cone_range: float = 8.0
 @export var cone_angle_deg: float = 30.0
-@export var dot_damage: float = 5.0 ## per second while burning
 @export var dot_duration: float = 3.0
 @export var fire_puddle_duration: float = 4.0
 
 var _is_firing: bool = false
-var _flame_particles: GPUParticles3D = null
-var _smoke_particles: GPUParticles3D = null
-
-
-func _ready() -> void:
-	super._ready()
-	mount_type = MountType.PRIMARY
-	fire_rate = 30.0 # continuous, checks rapidly
-	damage = 3.0 # per tick
-	reload_type = ReloadType.OVERHEAT
-	heat_per_shot = 2.0
-	max_heat = 100.0
-	cooldown_rate = 25.0
-	overheat_penalty = 2.5
-	recoil_impulse = 2.0
-	recoil_torque_impulse = 0.35
-	_flame_particles = get_node_or_null("FlameParticles")
-	_smoke_particles = get_node_or_null("SmokeParticles")
+@onready var _flame_particles: GPUParticles3D = %FlameParticles
+@onready var _smoke_particles: GPUParticles3D = %SmokeParticles
 
 
 func _do_fire() -> void:
@@ -66,7 +49,7 @@ func _apply_flame_damage(body: Node3D) -> void:
 		dmg_sys.take_damage(dmg_sys.DamageZone.ENGINE, damage)
 		# Apply burning DoT via metadata
 		if body.has_method("apply_burning"):
-			body.apply_burning(dot_damage, dot_duration)
+			body.apply_burning(damage, dot_duration)
 
 
 func _get_bodies_in_range(origin: Vector3, radius: float) -> Array:

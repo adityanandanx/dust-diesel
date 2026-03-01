@@ -1,10 +1,20 @@
 [gd_scene format=3 uid="uid://c5vyghw7jtfgd"]
 
 [ext_resource type="Script" uid="uid://djyhgv55cg4fy" path="res://scripts/weapons/scrap_cannon.gd" id="1_sc"]
-[ext_resource type="PackedScene" uid="uid://boxn0p3yta4q" path="res://assets/models/weapons/rpg.blend" id="2_6cebv"]
+[ext_resource type="PackedScene" uid="uid://cwxcavtm2n6hc" path="res://assets/models/weapons/scrap_cannon.blend" id="2_6cebv"]
 
 [node name="ScrapCannon" type="Node3D" unique_id=662804266]
 script = ExtResource("1_sc")
+mount_type = 0
+fire_rate = 0.25
+damage = 60.0
+reload_type = 2
+max_ammo = -1
+recoil_impulse = 140.0
+recoil_torque_impulse = 9.0
+aim_yaw_node_path = NodePath("scrap_cannon")
+aim_pitch_node_path = NodePath("scrap_cannon/Circle_002")
 
-[node name="rpg" parent="." unique_id=293993457 instance=ExtResource("2_6cebv")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)
+[node name="scrap_cannon" parent="." unique_id=2143549064 instance=ExtResource("2_6cebv")]
+
+[editable path="scrap_cannon"]

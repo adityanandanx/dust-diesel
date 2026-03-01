@@ -8,12 +8,12 @@ const FuelCanScene := preload("res://scenes/pickups/FuelCan.tscn")
 const POWERUP_TYPE_COUNT: int = 6
 const POWERUP_DEFAULT_TYPE: int = 2 # FUEL_CAN
 
-@export var weapon_spawn_interval: float = 15.0
+@export var weapon_spawn_interval: float = 8.0
 @export var powerup_spawn_interval: float = 20.0
 @export var fuel_spawn_interval: float = 25.0
 @export var max_active_pickups: int = 8
 
-var _weapon_timer: float = 5.0 # first weapon spawns at 5s
+var _weapon_timer: float = 2.5 # first weapon spawns quickly
 var _powerup_timer: float = 10.0
 var _fuel_timer: float = 8.0
 var _active_pickups: Dictionary = {} # id -> pickup node

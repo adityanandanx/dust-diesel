@@ -3,14 +3,7 @@
 [ext_resource type="Script" uid="uid://di2b24hb1cvi6" path="res://scripts/weapons/flame_projector.gd" id="1_fp"]
 [ext_resource type="Texture2D" uid="uid://ciqk8fphcjr6b" path="res://assets/sprites/kenny_smoke/Flash/flash06.png" id="2_flash"]
 [ext_resource type="Texture2D" uid="uid://pkk1wsadgju0" path="res://assets/sprites/kenny_smoke/Black smoke/blackSmoke08.png" id="3_smoke"]
-
-[sub_resource type="CylinderMesh" id="ConeMesh_nozzle"]
-top_radius = 0.01
-bottom_radius = 0.2
-
-[sub_resource type="StandardMaterial3D" id="Mat_fp"]
-albedo_color = Color(0.85, 0.35, 0.1, 1)
-metallic = 0.5
+[ext_resource type="PackedScene" uid="uid://dekm80a767krx" path="res://assets/models/weapons/flame_thrower.blend" id="4_ykgrl"]
 
 [sub_resource type="Curve" id="Curve_v73aj"]
 _data = [Vector2(0, 0.48441923), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
@@ -66,14 +59,22 @@ material = SubResource("Mat_smoke_draw")
 
 [node name="FlameProjector" type="Node3D" unique_id=453456189]
 script = ExtResource("1_fp")
+aim_yaw_node_path = NodePath("flame_thrower")
+aim_pitch_node_path = NodePath("flame_thrower/Turret")
+damage = 70.0
+fire_rate = 30.0
+reload_type = 0
+recoil_impulse = 2.0
+recoil_torque_impulse = 0.35
+heat_per_shot = 2.0
+cooldown_rate = 25.0
+overheat_penalty = 2.5
 
-[node name="Nozzle" type="MeshInstance3D" parent="." unique_id=1105948471]
-transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 1)
-mesh = SubResource("ConeMesh_nozzle")
-surface_material_override/0 = SubResource("Mat_fp")
+[node name="flame_thrower" parent="." unique_id=1344512460 instance=ExtResource("4_ykgrl")]
 
-[node name="FlameParticles" type="GPUParticles3D" parent="." unique_id=1563821070]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.2)
+[node name="FlameParticles" type="GPUParticles3D" parent="flame_thrower/Turret" parent_id_path=PackedInt32Array(1344512460, 380481859) index="6" unique_id=1563821070]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 1.2001292, 0.013380438)
 amount = 64
 lifetime = 0.6
 speed_scale = 1.6
@@ -82,8 +83,9 @@ randomness = 0.35
 process_material = SubResource("ParticleMat_flame")
 draw_pass_1 = SubResource("QuadMesh_flame")
 
-[node name="SmokeParticles" type="GPUParticles3D" parent="." unique_id=162246921]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.35)
+[node name="SmokeParticles" type="GPUParticles3D" parent="flame_thrower/Turret" parent_id_path=PackedInt32Array(1344512460, 380481859) index="7" unique_id=162246921]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 1.3501291, 0.013380438)
 amount = 28
 lifetime = 0.62
 speed_scale = 1.2
@@ -91,3 +93,5 @@ explosiveness = 0.08
 randomness = 0.3
 process_material = SubResource("ParticleMat_smoke")
 draw_pass_1 = SubResource("QuadMesh_smoke")
+
+[editable path="flame_thrower"]

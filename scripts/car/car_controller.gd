@@ -77,6 +77,11 @@ var secondary_weapon: WeaponBase = null
 @onready var weapon_mount_primary: Node3D = $WeaponMountPrimary
 @onready var weapon_mount_secondary: Node3D = $WeaponMountSecondary
 
+@export_group("Damage Hit Mapping")
+@export var wheel_hit_radius: float = 0.95
+@export var weapon_mount_hit_radius: float = 0.9
+@export var engine_hit_front_ratio: float = 0.2
+
 
 func _ready() -> void:
 	add_to_group("cars")
@@ -413,3 +418,46 @@ func _weapon_recoil_intensity(weapon: WeaponBase) -> float:
 		return 0.8
 	var recoil: float = absf(weapon.recoil_impulse) * maxf(weapon.recoil_linear_scale, 0.1)
 	return clampf(recoil / 450.0, 0.35, 2.0)
+
+
+func take_hit(amount: float, hit_position: Vector3, _attacker: Node) -> void:
+	if not is_alive or damage_system == null:
+		return
+	if amount <= 0.0:
+		return
+
+	var zone: CarDamageSystem.DamageZone = _resolve_hit_zone(hit_position)
+	damage_system.take_damage(zone, amount)
+
+
+func _resolve_hit_zone(hit_position: Vector3) -> CarDamageSystem.DamageZone:
+	var wheel_nodes: Array[Node3D] = [front_left_wheel, front_right_wheel, rear_left_wheel, rear_right_wheel]
+	var wheel_zones: Array[CarDamageSystem.DamageZone] = [
+		CarDamageSystem.DamageZone.WHEEL_FL,
+		CarDamageSystem.DamageZone.WHEEL_FR,
+		CarDamageSystem.DamageZone.WHEEL_RL,
+		CarDamageSystem.DamageZone.WHEEL_RR,
+	]
+
+	for i in range(wheel_nodes.size()):
+		var wheel: Node3D = wheel_nodes[i]
+		if wheel and hit_position.distance_to(wheel.global_position) <= wheel_hit_radius:
+			return wheel_zones[i]
+
+	if weapon_mount_primary and hit_position.distance_to(weapon_mount_primary.global_position) <= weapon_mount_hit_radius:
+		return CarDamageSystem.DamageZone.WEAPON_MOUNT
+	if weapon_mount_secondary and hit_position.distance_to(weapon_mount_secondary.global_position) <= weapon_mount_hit_radius:
+		return CarDamageSystem.DamageZone.WEAPON_MOUNT
+
+	var front_center: Vector3 = (front_left_wheel.global_position + front_right_wheel.global_position) * 0.5
+	var rear_center: Vector3 = (rear_left_wheel.global_position + rear_right_wheel.global_position) * 0.5
+	var front_dir: Vector3 = (front_center - rear_center).normalized()
+	if front_dir.length_squared() < 0.001:
+		return CarDamageSystem.DamageZone.CHASSIS
+
+	var wheelbase: float = front_center.distance_to(rear_center)
+	var longitudinal: float = (hit_position - global_position).dot(front_dir)
+	if longitudinal > wheelbase * engine_hit_front_ratio:
+		return CarDamageSystem.DamageZone.ENGINE
+
+	return CarDamageSystem.DamageZone.CHASSIS

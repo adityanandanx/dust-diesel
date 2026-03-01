@@ -6,7 +6,6 @@ extends WeaponBase
 const HarpoonSpearScene: PackedScene = preload("res://scenes/weapons/HarpoonSpear.tscn")
 
 @export var spear_speed: float = 50.0
-@export var spear_damage: float = 15.0
 @export var spring_strength: float = 18000.0
 @export var spring_damping: float = 9800.0
 @export var pull_boost_multiplier: float = 1.9
@@ -18,6 +17,8 @@ const HarpoonSpearScene: PackedScene = preload("res://scenes/weapons/HarpoonSpea
 @export var max_tether_length: float = 40.0
 @export var chain_segments: int = 14
 @export var chain_sag: float = 0.06
+@export var bot_hold_time_min: float = 0.9
+@export var bot_hold_time_max: float = 2.4
 
 @onready var rope_origin: Node3D = get_node_or_null("RopeOrigin")
 
@@ -30,17 +31,11 @@ var _active_spear: Node3D = null
 var _tether_line: MeshInstance3D = null
 var _tether_mesh: ImmediateMesh = null
 var _tether_material: StandardMaterial3D = null
+var _bot_release_timer: float = 0.0
 
 
 func _ready() -> void:
 	super._ready()
-	mount_type = MountType.PRIMARY
-	fire_rate = 0.5
-	damage = spear_damage
-	reload_type = ReloadType.NONE
-	max_ammo = -1
-	recoil_impulse = 90.0
-	recoil_torque_impulse = 6.0
 
 	# Prepare the tether line visual
 	_tether_mesh = ImmediateMesh.new()
@@ -74,10 +69,12 @@ func _do_fire() -> void:
 	if spear.has_method("launch"):
 		spear.launch(forward, owner_car)
 	spear.set("speed", spear_speed)
-	spear.set("damage", spear_damage)
+	spear.set("damage", damage)
 	if spear.has_signal("stuck"):
 		spear.stuck.connect(_on_spear_stuck)
 	_active_spear = spear
+	if _is_bot_owner():
+		_bot_release_timer = randf_range(bot_hold_time_min, bot_hold_time_max)
 	_tether_line.visible = true
 
 
@@ -85,7 +82,18 @@ func _physics_process(delta: float) -> void:
 	super._physics_process(delta)
 
 	# Harpoon is hold-to-maintain. Releasing fire resets flying spear or active tether.
-	var trigger_held: bool = Input.is_action_pressed("fire_primary")
+	var harpoon_active: bool = (_tethered_target and is_instance_valid(_tethered_target)) or (_active_spear and is_instance_valid(_active_spear))
+	var trigger_held: bool = true
+	if _is_local_input_owner():
+		trigger_held = Input.is_action_pressed("fire_primary")
+	elif _is_bot_owner():
+		if harpoon_active:
+			_bot_release_timer = maxf(_bot_release_timer - delta, 0.0)
+		trigger_held = _bot_release_timer > 0.0
+	else:
+		# Remote/non-local owners should not depend on local input state.
+		trigger_held = true
+
 	if not trigger_held and (_tethered_target or (_active_spear and is_instance_valid(_active_spear))):
 		_break_tether()
 		return
@@ -104,7 +112,6 @@ func _physics_process(delta: float) -> void:
 		if not (_tethered_target and is_instance_valid(_tethered_target)):
 			_tether_line.visible = false
 
-	var harpoon_active: bool = (_tethered_target and is_instance_valid(_tethered_target)) or (_active_spear and is_instance_valid(_active_spear))
 	if trigger_held and harpoon_active:
 		# Keep the weapon in a cooldown state while the held harpoon is active.
 		_fire_timer = maxf(_fire_timer, get_fire_cooldown_duration())
@@ -138,7 +145,8 @@ func _physics_process(delta: float) -> void:
 
 		# Stable spring-damper: damping reduces pull while closing, increases while separating.
 		var pull_force_mag: float = stretch * spring_strength + separation_speed * spring_damping
-		if Input.is_action_pressed("fire_primary"):
+		var boost_pull: bool = _is_local_input_owner() and Input.is_action_pressed("fire_primary")
+		if boost_pull:
 			pull_force_mag *= lerpf(1.0, pull_boost_multiplier, 0.55)
 
 		pull_force_mag = clampf(pull_force_mag, 0.0, max_tether_force)
@@ -180,6 +188,8 @@ func _on_spear_stuck(target: Node, hit_position: Vector3, _hit_normal: Vector3) 
 	_tether_anchor_local = _tethered_target.to_local(hit_position)
 	_tether_rest_length = maxf(owner_car.global_position.distance_to(hit_position), min_tether_length)
 	tether_timer = 0.0
+	if _is_bot_owner():
+		_bot_release_timer = randf_range(bot_hold_time_min, bot_hold_time_max)
 	_tether_line.visible = true
 
 
@@ -187,11 +197,28 @@ func _break_tether() -> void:
 	_tethered_target = null
 	tether_timer = 0.0
 	_tether_rest_length = 0.0
+	_bot_release_timer = 0.0
 	if _tether_line:
 		_tether_line.visible = false
 	if _active_spear and is_instance_valid(_active_spear):
 		_active_spear.queue_free()
 	_active_spear = null
+
+
+func _is_local_input_owner() -> bool:
+	if owner_car == null or not is_instance_valid(owner_car):
+		return false
+	if not (owner_car is Car):
+		return false
+	return (owner_car as Car).uses_player_input
+
+
+func _is_bot_owner() -> bool:
+	if owner_car == null or not is_instance_valid(owner_car):
+		return false
+	if not (owner_car is Car):
+		return false
+	return (owner_car as Car).is_bot
 
 
 func _draw_tether_line(anchor_world: Vector3) -> void:

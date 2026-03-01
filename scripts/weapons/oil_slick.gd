@@ -8,19 +8,6 @@ const OilPuddleScene := preload("res://scenes/weapons/OilPuddle.tscn")
 @export var drop_offset: float = -3.0 ## behind the car
 
 
-func _ready() -> void:
-	super._ready()
-	mount_type = MountType.SECONDARY
-	fire_rate = 0.5 ## 2 seconds between drops
-	damage = 0.0
-	max_ammo = 5
-	ammo = max_ammo
-	reload_type = ReloadType.NONE
-	recoil_impulse = 22.0
-	recoil_torque_impulse = 1.0
-	recoil_direction = 1.0
-
-
 func _do_fire() -> void:
 	if not owner_car:
 		return

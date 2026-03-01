@@ -5,6 +5,17 @@
 
 [node name="RivetCannon" type="Node3D" unique_id=108882934]
 script = ExtResource("1_rc")
+mount_type = 0
+fire_rate = 10.0
+damage = 40.0
+reload_type = 0
+heat_per_shot = 10.0
+max_heat = 100.0
+cooldown_rate = 40.0
+overheat_penalty = 2.0
+recoil_impulse = 8.0
+recoil_torque_impulse = 1.2
+spread_angle = 0.01
 aim_yaw_node_path = NodePath("rivet_cannon")
 aim_pitch_node_path = NodePath("rivet_cannon/Turret")
 

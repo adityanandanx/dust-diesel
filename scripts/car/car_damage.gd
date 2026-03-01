@@ -13,6 +13,15 @@ enum DamageZone {ENGINE, CHASSIS, WHEEL_FL, WHEEL_FR, WHEEL_RL, WHEEL_RR, WEAPON
 @export var max_wheel_hp: float = 50.0
 @export var max_weapon_hp: float = 60.0
 
+@export_group("Damage Popup")
+@export var show_damage_popup: bool = true
+@export var popup_base_height: float = 2.4
+@export var popup_rise_distance: float = 1.3
+@export var popup_rise_time: float = 0.42
+@export var popup_fade_out_time: float = 0.35
+@export var popup_pixel_size: float = 0.0075
+@export var popup_font_size: int = 44
+
 var engine_hp: float = 100.0
 var chassis_hp: float = 100.0
 var wheel_hp: Array[float] = [50.0, 50.0, 50.0, 50.0] # FL, FR, RL, RR
@@ -33,6 +42,9 @@ func take_damage(zone: DamageZone, amount: float) -> void:
 
 
 func _apply_damage_internal(zone: DamageZone, amount: float) -> void:
+	if amount > 0.0:
+		_show_damage_popup(amount)
+
 	match zone:
 		DamageZone.ENGINE:
 			engine_hp = maxf(engine_hp - amount, 0.0)
@@ -117,3 +129,59 @@ func get_zone_health(zone: String) -> Dictionary:
 			if idx >= 0 and idx < wheel_hp.size():
 				return {"current": wheel_hp[idx], "max": max_wheel_hp}
 	return {"current": 0.0, "max": 1.0}
+
+
+func _show_damage_popup(amount: float) -> void:
+	if not show_damage_popup:
+		return
+	if amount <= 0.0:
+		return
+
+	var car := get_parent() as Node3D
+	if car == null:
+		return
+	if not is_instance_valid(car):
+		return
+	if car.is_queued_for_deletion():
+		return
+	if not car.is_inside_tree():
+		return
+
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return
+
+	var host: Node = tree.current_scene
+	if host == null:
+		host = car
+	if not host.is_inside_tree():
+		return
+
+	var popup := Label3D.new()
+	popup.top_level = true
+	popup.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	popup.no_depth_test = true
+	popup.font_size = popup_font_size
+	popup.outline_size = 10
+	popup.pixel_size = popup_pixel_size
+	popup.modulate = Color(1.0, 0.36, 0.2, 0.0)
+	popup.outline_modulate = Color(0.05, 0.05, 0.05, 0.95)
+
+	var dmg_text: String = "%d" % int(round(amount))
+	if amount < 1.0:
+		dmg_text = "%.1f" % amount
+	popup.text = "-%s" % dmg_text
+
+	if not is_instance_valid(car) or car.is_queued_for_deletion() or not car.is_inside_tree():
+		return
+	var start_pos := car.global_position + Vector3(randf_range(-0.35, 0.35), popup_base_height, randf_range(-0.35, 0.35))
+	popup.global_position = start_pos
+	host.add_child(popup)
+
+	var tween: Tween = popup.create_tween()
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(popup, "global_position", start_pos + Vector3(0.0, popup_rise_distance, 0.0), popup_rise_time + popup_fade_out_time)
+	tween.parallel().tween_property(popup, "modulate:a", 1.0, popup_rise_time * 0.4)
+	tween.tween_property(popup, "modulate:a", 0.0, popup_fade_out_time)
+	tween.finished.connect(popup.queue_free)

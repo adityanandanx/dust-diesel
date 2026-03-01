@@ -20,13 +20,6 @@ var _emp_affected: Dictionary = {}
 
 func _ready() -> void:
 	super._ready()
-	mount_type = MountType.SECONDARY
-	fire_rate = 0.2 ## 5 second recharge
-	damage = 0.0 ## no direct damage
-	reload_type = ReloadType.NONE
-	max_ammo = -1
-	recoil_impulse = 65.0
-	recoil_torque_impulse = 4.0
 	_setup_impact_zone_material()
 	impact_zone_sphere.visible = false
 	impact_zone_sphere.scale = Vector3.ONE * 0.01

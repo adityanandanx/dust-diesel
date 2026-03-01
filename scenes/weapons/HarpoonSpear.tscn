@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://bdy3qoli6o3l7" path="res://scripts/weapons/harpoon_spear.gd" id="1_harpoon"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_spear"]
-radius = 0.08
+radius = 0.24511719
 height = 1.0
 
 [node name="HarpoonSpear" type="CharacterBody3D" unique_id=1146178399]

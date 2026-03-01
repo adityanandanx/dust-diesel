@@ -13,6 +13,15 @@ metallic = 0.9
 
 [node name="OilSlick" type="Node3D"]
 script = ExtResource("1_os")
+mount_type = 1
+fire_rate = 0.5
+damage = 0.0
+max_ammo = 5
+ammo = 5
+reload_type = 2
+recoil_impulse = 22.0
+recoil_torque_impulse = 1.0
+recoil_direction = 1.0
 
 [node name="Tank" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.3)

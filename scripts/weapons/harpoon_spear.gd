@@ -51,28 +51,31 @@ func launch(dir: Vector3, from_car: Node = null) -> void:
 
 func _on_hit(collision: KinematicCollision3D) -> void:
 	var collider: Node = collision.get_collider()
+	var valid_owner: Node = _get_valid_owner_car()
 	_spawn_hit_particles(collision)
 
-	if collider == owner_car:
+	if _is_same_or_ancestor(collider, valid_owner):
 		return
 
-	_apply_impact_damage(collider)
+	_apply_impact_damage(collider, collision.get_position(), valid_owner)
 	_embed(collider, collision.get_position(), collision.get_normal())
 
 
-func _apply_impact_damage(collider: Node) -> void:
+func _apply_impact_damage(collider: Node, hit_position: Vector3, valid_owner: Node) -> void:
 	# Remote projectiles deal no damage to prevent double-dipping in multiplayer.
-	if owner_car and not owner_car.is_player and NakamaManager.current_match:
+	if valid_owner and not valid_owner.is_player and NakamaManager.current_match:
 		return
 
-	if collider.has_method("take_hit"):
-		collider.take_hit(damage, global_position, owner_car)
-	elif collider is VehicleBody3D and collider.has_node("DamageSystem"):
-		var dmg_sys: Node = collider.get_node("DamageSystem")
+	var damage_target: Node = _resolve_damage_target(collider)
+
+	if damage_target and damage_target.has_method("take_hit"):
+		damage_target.take_hit(damage, hit_position, valid_owner)
+	elif damage_target is VehicleBody3D and damage_target.has_node("DamageSystem"):
+		var dmg_sys: Node = damage_target.get_node("DamageSystem")
 		if dmg_sys and dmg_sys.has_method("take_collision_damage"):
 			dmg_sys.take_collision_damage(damage)
-	elif collider is DestructibleBase and not collider.is_destroyed:
-		collider.take_damage(damage, owner_car)
+	elif damage_target is DestructibleBase and not damage_target.is_destroyed:
+		damage_target.take_damage(damage, valid_owner)
 
 
 func _embed(collider: Node, hit_position: Vector3, hit_normal: Vector3) -> void:
@@ -109,7 +112,10 @@ func _update_stuck_transform() -> void:
 	var world_normal: Vector3 = _get_world_normal()
 	if world_normal.length_squared() < 0.001:
 		world_normal = _direction
-	look_at(global_position + world_normal, Vector3.UP)
+	var up: Vector3 = Vector3.UP
+	if absf(world_normal.normalized().dot(up)) > 0.995:
+		up = Vector3.FORWARD
+	look_at(global_position + world_normal, up)
 
 
 func _get_world_normal() -> Vector3:
@@ -133,3 +139,43 @@ func _spawn_hit_particles(collision: KinematicCollision3D) -> void:
 		fx.set("auto_free", true)
 	if fx.has_method("emit_at"):
 		fx.emit_at(fx.global_position)
+
+
+func _resolve_damage_target(collider: Node) -> Node:
+	var current: Node = collider
+	while current:
+		if current.has_method("take_hit"):
+			return current
+		if current is VehicleBody3D and current.has_node("DamageSystem"):
+			return current
+		if current is DestructibleBase:
+			return current
+		current = current.get_parent()
+	return collider
+
+
+func _is_same_or_ancestor(node: Node, candidate_ancestor: Variant) -> bool:
+	if node == null:
+		return false
+	if candidate_ancestor == null:
+		return false
+	if not (candidate_ancestor is Node):
+		return false
+	if not is_instance_valid(candidate_ancestor):
+		return false
+	var ancestor: Node = candidate_ancestor as Node
+	var current: Node = node
+	while current:
+		if current == ancestor:
+			return true
+		current = current.get_parent()
+	return false
+
+
+func _get_valid_owner_car() -> Node:
+	if owner_car == null:
+		return null
+	if not is_instance_valid(owner_car):
+		owner_car = null
+		return null
+	return owner_car

@@ -48,27 +48,31 @@ func launch(dir: Vector3, from_car: Node = null) -> void:
 
 func _on_hit(collision: KinematicCollision3D) -> void:
 	var collider := collision.get_collider()
+	var hit_position: Vector3 = collision.get_position()
+	var valid_owner: Node = _get_valid_owner_car()
 	_spawn_hit_particles(collision)
 
 	# Don't hit our own car
-	if collider == owner_car:
+	if _is_same_or_ancestor(collider, valid_owner):
 		return
 
 	hit.emit(collider)
 
 	# Remote projectiles deal no damage to prevent double-dipping in multiplayer
-	if owner_car and not owner_car.is_player and NakamaManager.current_match:
+	if valid_owner and not valid_owner.is_player and NakamaManager.current_match:
 		queue_free()
 		return
 
 	# Direct damage
-	if collider.has_method("take_hit"):
-		collider.take_hit(damage, global_position, owner_car)
-	elif collider is VehicleBody3D and collider.has_node("DamageSystem"):
-		var dmg_sys = collider.get_node("DamageSystem")
-		dmg_sys.take_collision_damage(damage)
-	elif collider is DestructibleBase and not collider.is_destroyed:
-		collider.take_damage(damage, owner_car)
+	var damage_target: Node = _resolve_damage_target(collider)
+	if damage_target and damage_target.has_method("take_hit"):
+		damage_target.take_hit(damage, hit_position, valid_owner)
+	elif damage_target is VehicleBody3D and damage_target.has_node("DamageSystem"):
+		var dmg_sys: Node = damage_target.get_node("DamageSystem")
+		if dmg_sys and dmg_sys.has_method("take_collision_damage"):
+			dmg_sys.take_collision_damage(damage)
+	elif damage_target is DestructibleBase and not damage_target.is_destroyed:
+		damage_target.take_damage(damage, valid_owner)
 
 	# Splash damage
 	if splash_radius > 0.0:
@@ -111,13 +115,59 @@ func _apply_splash(center: Vector3) -> void:
 	query.collision_mask = collision_mask
 
 	var results := space.intersect_shape(query, 16)
+	var valid_owner: Node = _get_valid_owner_car()
 	for result in results:
-		var body = result["collider"]
-		if body == owner_car:
+		var body: Node = result["collider"]
+		var damage_target: Node = _resolve_damage_target(body)
+		if _is_same_or_ancestor(damage_target, valid_owner):
 			continue
-		var dist := center.distance_to(body.global_position)
+		if not (damage_target is Node3D):
+			continue
+		var dist := center.distance_to((damage_target as Node3D).global_position)
 		var falloff := 1.0 - clampf(dist / splash_radius, 0.0, 1.0)
-		if body is VehicleBody3D and body.has_node("DamageSystem"):
-			body.get_node("DamageSystem").take_collision_damage(splash_damage * falloff)
-		elif body is DestructibleBase and not body.is_destroyed:
-			body.take_damage(splash_damage * falloff, owner_car)
+		if damage_target and damage_target.has_method("take_hit"):
+			damage_target.take_hit(splash_damage * falloff, center, valid_owner)
+		elif damage_target is VehicleBody3D and damage_target.has_node("DamageSystem"):
+			damage_target.get_node("DamageSystem").take_collision_damage(splash_damage * falloff)
+		elif damage_target is DestructibleBase and not damage_target.is_destroyed:
+			damage_target.take_damage(splash_damage * falloff, valid_owner)
+
+
+func _resolve_damage_target(collider: Node) -> Node:
+	var current: Node = collider
+	while current:
+		if current.has_method("take_hit"):
+			return current
+		if current is VehicleBody3D and current.has_node("DamageSystem"):
+			return current
+		if current is DestructibleBase:
+			return current
+		current = current.get_parent()
+	return collider
+
+
+func _is_same_or_ancestor(node: Node, candidate_ancestor: Variant) -> bool:
+	if node == null:
+		return false
+	if candidate_ancestor == null:
+		return false
+	if not (candidate_ancestor is Node):
+		return false
+	if not is_instance_valid(candidate_ancestor):
+		return false
+	var ancestor: Node = candidate_ancestor as Node
+	var current: Node = node
+	while current:
+		if current == ancestor:
+			return true
+		current = current.get_parent()
+	return false
+
+
+func _get_valid_owner_car() -> Node:
+	if owner_car == null:
+		return null
+	if not is_instance_valid(owner_car):
+		owner_car = null
+		return null
+	return owner_car

@@ -5,6 +5,13 @@
 
 [node name="HarpoonLauncher" type="Node3D" unique_id=2085900769]
 script = ExtResource("1_hl")
+mount_type = 0
+fire_rate = 0.5
+damage = 15.0
+reload_type = 2
+max_ammo = -1
+recoil_impulse = 90.0
+recoil_torque_impulse = 6.0
 aim_yaw_node_path = NodePath("harpoon")
 aim_pitch_node_path = NodePath("harpoon/Circle_002")
 

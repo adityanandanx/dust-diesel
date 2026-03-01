@@ -7,10 +7,12 @@ signal player_eliminated(player_name: String, killer_name: String)
 signal match_ended(winner_name: String)
 
 const WreckScene := preload("res://scenes/vehicles/CarWreck.tscn")
-const WeaponScene := preload("res://scenes/weapons/RivetCannon.tscn")
-const WeaponScene2 := preload("res://scenes/weapons/EMPBlaster.tscn")
 const DefaultSpawnPointsScene := preload("res://scenes/game/SpawnPoints.tscn")
 const BotDriverScript := preload("res://scripts/car/bot_driver.gd")
+
+@export_group("Respawn")
+@export var respawn_enabled: bool = true
+@export var respawn_delay_seconds: float = 5.0
 
 # Must match the order in weapon_pickup.gd _weapon_scenes
 var WEAPON_SCENES: Array[PackedScene] = [
@@ -35,6 +37,7 @@ var kill_feed: Array[Dictionary] = [] # {victim, killer, cause, time}
 var connected_cars: Dictionary = {}
 var spawn_points: Node3D = null
 var _active_map_root: Node3D = null
+var _local_respawn_seq: int = 0
 
 
 func _ready() -> void:
@@ -108,7 +111,9 @@ func _spawn_networked_players() -> void:
 		var is_bot: bool = bool(p_data.get("is_bot", false))
 		var is_locally_owned: bool = is_me or (is_bot and NakamaManager.is_host)
 		
-		var v_id = p_data.get("selected_vehicle", "sedan")
+		var v_id: String = p_data.get("selected_vehicle", "sedan")
+		if is_bot:
+			v_id = _pick_random_bot_vehicle_id(str(sess_id))
 		var v_data = VehicleRegistry.get_by_id(v_id)
 		var car_scene: PackedScene = load(v_data.scene_path)
 		var car: Car = car_scene.instantiate()
@@ -131,9 +136,7 @@ func _spawn_networked_players() -> void:
 		alive_cars.append(car)
 		connected_cars[sess_id] = car
 		
-		# Default weapons for now
-		car.equip_weapon(WeaponScene.instantiate())
-		car.equip_weapon(WeaponScene2.instantiate())
+		_equip_random_starting_weapons(car, str(sess_id))
 		if is_bot and NakamaManager.is_host:
 			_attach_bot_driver(car)
 		
@@ -245,6 +248,8 @@ func _on_network_player_joined(sess_id: String, _user_id: String, _username: Str
 	var is_locally_owned: bool = is_me or (is_bot and NakamaManager.is_host)
 
 	var v_id: String = p_data.get("selected_vehicle", "sedan")
+	if is_bot:
+		v_id = _pick_random_bot_vehicle_id(str(sess_id))
 	var v_data = VehicleRegistry.get_by_id(v_id)
 	var car_scene: PackedScene = load(v_data.scene_path)
 	var car: Car = car_scene.instantiate()
@@ -271,8 +276,7 @@ func _on_network_player_joined(sess_id: String, _user_id: String, _username: Str
 	alive_cars.append(car)
 	connected_cars[sess_id] = car
 
-	car.equip_weapon(WeaponScene.instantiate())
-	car.equip_weapon(WeaponScene2.instantiate())
+	_equip_random_starting_weapons(car, str(sess_id))
 	if is_bot and NakamaManager.is_host:
 		_attach_bot_driver(car)
 
@@ -315,21 +319,24 @@ func _spawn_players() -> void:
 	if top_down_camera and top_down_camera.has_method("set_target"):
 		top_down_camera.set_target(car)
 
-	# Equip starting weapon
-	car.equip_weapon(WeaponScene.instantiate())
-	car.equip_weapon(WeaponScene2.instantiate())
+	# Equip random starting weapons.
+	_equip_random_starting_weapons(car)
 
 	if points.size() > 3:
-		v_data = VehicleRegistry.get_by_id("ambulance")
+		var dummy_vehicle_id: String = _pick_random_bot_vehicle_id()
+		v_data = VehicleRegistry.get_by_id(dummy_vehicle_id)
 		car_scene = load(v_data.scene_path)
 		var dummy: Car = car_scene.instantiate()
-		dummy.vehicle_data_id = "ambulance"
-		VehicleRegistry.apply_tuning(dummy, "ambulance")
+		dummy.vehicle_data_id = dummy_vehicle_id
+		VehicleRegistry.apply_tuning(dummy, dummy_vehicle_id)
+		dummy.is_bot = true
 		cars_container.add_child(dummy)
 		dummy.global_transform = points[0].global_transform
 		dummy.car_destroyed.connect(_on_car_destroyed)
 		dummy.car_stalled.connect(_on_car_stalled)
 		alive_cars.append(dummy)
+		_equip_random_starting_weapons(dummy)
+		_attach_bot_driver(dummy)
 
 func _on_car_destroyed(car: Car) -> void:
 	_eliminate_car(car, "destroyed")
@@ -348,8 +355,10 @@ func _eliminate_car(car: Car, cause: String) -> void:
 		# Already eliminated on this client.
 		return
 
-	# Broadcast death to remote players if this is our local car
-	if NakamaManager.current_match and car.is_player:
+	var respawn_snapshot: Dictionary = _build_respawn_snapshot(car)
+
+	# Broadcast death only for the locally controlled player car.
+	if NakamaManager.current_match and car.uses_player_input:
 		var data = {
 			"session_id": NakamaManager.current_match.self_user.session_id,
 			"cause": cause
@@ -374,9 +383,11 @@ func _eliminate_car(car: Car, cause: String) -> void:
 			hud.add_kill_feed_entry("[KILL] %s (%s)" % [car.name, cause])
 	player_eliminated.emit(car.name, "")
 
-	# Detach camera before the node is deleted to avoid stale follow targets.
-	if car.is_player and top_down_camera and top_down_camera.has_method("set_target"):
+	# Detach camera only if the eliminated car is the locally controlled one.
+	if car.uses_player_input and top_down_camera and top_down_camera.has_method("set_target"):
 		top_down_camera.set_target(null)
+	if car.uses_player_input and hud and hud.has_method("bind_car"):
+		hud.bind_car(null)
 
 	# Remove the car
 	car.queue_free()
@@ -385,7 +396,11 @@ func _eliminate_car(car: Car, cause: String) -> void:
 	if car.network_id != "":
 		connected_cars.erase(car.network_id)
 
-	# Check win condition
+	if respawn_enabled:
+		_schedule_respawn(respawn_snapshot)
+		return
+
+	# Check win condition when respawns are disabled.
 	if alive_cars.size() <= 1 and alive_cars.size() > 0:
 		var winner: Car = alive_cars[0]
 		match_ended.emit(winner.name)
@@ -416,6 +431,164 @@ func _attach_bot_driver(car: Car) -> void:
 	bot_driver.name = "BotDriver"
 	bot_driver.set_script(BotDriverScript)
 	car.add_child(bot_driver)
+
+
+func _build_respawn_snapshot(car: Car) -> Dictionary:
+	return {
+		"vehicle_data_id": car.vehicle_data_id,
+		"name": car.name,
+		"network_id": car.network_id,
+		"is_player": car.is_player,
+		"uses_player_input": car.uses_player_input,
+		"is_bot": car.is_bot,
+	}
+
+
+func _schedule_respawn(snapshot: Dictionary) -> void:
+	var seq: int = -1
+	if bool(snapshot.get("uses_player_input", false)):
+		_local_respawn_seq += 1
+		seq = _local_respawn_seq
+	_respawn_after_delay(snapshot, seq)
+
+
+func _respawn_after_delay(snapshot: Dictionary, local_seq: int) -> void:
+	var local_player_respawn: bool = bool(snapshot.get("uses_player_input", false))
+	var countdown: int = maxi(1, int(ceil(respawn_delay_seconds)))
+
+	while countdown > 0:
+		if local_player_respawn and local_seq == _local_respawn_seq and hud and hud.has_method("show_respawn_countdown"):
+			hud.show_respawn_countdown(countdown)
+		await get_tree().create_timer(1.0).timeout
+		countdown -= 1
+
+	if not is_inside_tree():
+		return
+
+	if local_player_respawn and local_seq == _local_respawn_seq and hud and hud.has_method("hide_respawn_countdown"):
+		hud.hide_respawn_countdown()
+
+	_respawn_car(snapshot)
+
+
+func _respawn_car(snapshot: Dictionary) -> void:
+	var vehicle_id: String = str(snapshot.get("vehicle_data_id", "sedan"))
+	var vehicle_data: Variant = VehicleRegistry.get_by_id(vehicle_id)
+	var scene_path: String = ""
+	if vehicle_data != null and "scene_path" in vehicle_data:
+		scene_path = str(vehicle_data.scene_path)
+	if scene_path == "":
+		vehicle_id = "sedan"
+		vehicle_data = VehicleRegistry.get_by_id(vehicle_id)
+		if vehicle_data != null and "scene_path" in vehicle_data:
+			scene_path = str(vehicle_data.scene_path)
+		if scene_path == "":
+			scene_path = "res://scenes/vehicles/cars/Sedan.tscn"
+
+	var car_scene: PackedScene = load(scene_path)
+	if car_scene == null:
+		return
+
+	var car: Car = car_scene.instantiate()
+	car.vehicle_data_id = vehicle_id
+	VehicleRegistry.apply_tuning(car, vehicle_id)
+
+	car.is_player = bool(snapshot.get("is_player", false))
+	car.uses_player_input = bool(snapshot.get("uses_player_input", false))
+	car.is_bot = bool(snapshot.get("is_bot", false))
+	car.network_id = str(snapshot.get("network_id", ""))
+	car.name = str(snapshot.get("name", "Unknown"))
+
+	cars_container.add_child(car)
+	car.global_transform = _pick_respawn_transform()
+
+	car.car_destroyed.connect(_on_car_destroyed)
+	car.car_stalled.connect(_on_car_stalled)
+	alive_cars.append(car)
+
+	if car.network_id != "":
+		connected_cars[car.network_id] = car
+
+	var weapon_seed: String = car.network_id
+	_equip_random_starting_weapons(car, weapon_seed)
+	if car.is_bot and NakamaManager.is_host:
+		_attach_bot_driver(car)
+
+	if car.uses_player_input:
+		if hud and hud.has_method("bind_car"):
+			hud.bind_car(car)
+		if top_down_camera and top_down_camera.has_method("set_target"):
+			top_down_camera.set_target(car)
+
+
+func _pick_respawn_transform() -> Transform3D:
+	if spawn_points and spawn_points.get_child_count() > 0:
+		var idx: int = randi() % spawn_points.get_child_count()
+		var marker: Node3D = spawn_points.get_child(idx) as Node3D
+		if marker:
+			return marker.global_transform
+	return Transform3D.IDENTITY
+
+
+func _pick_random_bot_vehicle_id(seed_key: String = "") -> String:
+	var vehicles: Array = VehicleRegistry.get_all()
+	if vehicles.is_empty():
+		return "sedan"
+
+	var idx: int = 0
+	if seed_key != "":
+		idx = absi(hash(seed_key)) % vehicles.size()
+	else:
+		idx = randi() % vehicles.size()
+
+	var data: Variant = vehicles[idx]
+	if data is VehicleData:
+		var vehicle_data: VehicleData = data as VehicleData
+		if vehicle_data.id != "":
+			return vehicle_data.id
+	return "sedan"
+
+
+func _equip_random_starting_weapons(car: Car, seed_key: String = "") -> void:
+	if car == null:
+		return
+
+	var primary_paths: PackedStringArray = [
+		"res://scenes/weapons/RivetCannon.tscn",
+		"res://scenes/weapons/ScrapCannon.tscn",
+		"res://scenes/weapons/FlameProjector.tscn",
+		"res://scenes/weapons/HarpoonLauncher.tscn",
+	]
+	var secondary_paths: PackedStringArray = [
+		"res://scenes/weapons/OilSlick.tscn",
+		"res://scenes/weapons/MineLayer.tscn",
+		"res://scenes/weapons/EMPBlaster.tscn",
+	]
+
+	var primary_candidates: Array[int] = []
+	var secondary_candidates: Array[int] = []
+	for i in range(WEAPON_SCENES.size()):
+		var scene_path: String = WEAPON_SCENES[i].resource_path
+		if primary_paths.has(scene_path):
+			primary_candidates.append(i)
+		elif secondary_paths.has(scene_path):
+			secondary_candidates.append(i)
+
+	if not primary_candidates.is_empty():
+		var p_idx: int = _pick_seeded_index(primary_candidates, "%s:primary" % seed_key)
+		car.equip_weapon(WEAPON_SCENES[p_idx].instantiate())
+	if not secondary_candidates.is_empty():
+		var s_idx: int = _pick_seeded_index(secondary_candidates, "%s:secondary" % seed_key)
+		car.equip_weapon(WEAPON_SCENES[s_idx].instantiate())
+
+
+func _pick_seeded_index(candidates: Array[int], seed_key: String = "") -> int:
+	if candidates.is_empty():
+		return 0
+	if seed_key == "":
+		return candidates[randi() % candidates.size()]
+	var idx: int = absi(hash(seed_key)) % candidates.size()
+	return candidates[idx]
 
 
 func _unhandled_input(event: InputEvent) -> void:
