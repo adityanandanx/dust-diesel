@@ -111,6 +111,23 @@ theme_override_colors/font_color = Color(0.9, 0.85, 0.65, 1)
 text = "MAP: BONEYARD"
 horizontal_alignment = 1
 
+[node name="BotRow" type="HBoxContainer" parent="Center/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BotLabel" type="Label" parent="Center/VBox/BotRow"]
+layout_mode = 2
+text = "BOTS"
+
+[node name="BotCountSpin" type="SpinBox" parent="Center/VBox/BotRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 16.0
+step = 1.0
+value = 3.0
+rounded = true
+
 [node name="ButtonRow" type="HBoxContainer" parent="Center/VBox" unique_id=935126344]
 layout_mode = 2
 theme_override_constants/separation = 12

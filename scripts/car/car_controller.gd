@@ -47,6 +47,8 @@ var boost_meter: float = 0.0
 var is_boosting: bool = false
 var is_alive: bool = true
 var is_player: bool = false ## only true for the local player's car
+var uses_player_input: bool = true
+var is_bot: bool = false
 var network_id: String = "" ## session_id of the owning player
 var vehicle_data_id: String = "sedan" ## which vehicle model to load
 var is_emp_disabled: bool = false
@@ -86,8 +88,8 @@ func _ready() -> void:
 	max_contacts_reported = 6
 	if not body_entered.is_connected(_on_body_entered):
 		body_entered.connect(_on_body_entered)
-	# Non-player cars: disable fuel drain
-	if not is_player:
+	# Disable fuel drain for non-player-input cars (remote peers and bots).
+	if not is_player or not uses_player_input or is_bot:
 		if fuel_system:
 			fuel_system.set_physics_process(false)
 	_cache_emp_meshes()
@@ -122,7 +124,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _handle_steering(delta: float) -> void:
-	if not is_player:
+	if not is_player or not uses_player_input:
 		return
 	var steer_input := Input.get_axis("steer_right", "steer_left")
 	var steer_target := steer_input * max_steer_angle
@@ -145,7 +147,7 @@ func _handle_steering(delta: float) -> void:
 
 
 func _handle_acceleration(_delta: float) -> void:
-	if not is_player:
+	if not is_player or not uses_player_input:
 		engine_force = 0.0
 		brake = 0.0
 		return
@@ -177,7 +179,7 @@ func _handle_acceleration(_delta: float) -> void:
 
 
 func _handle_boost(delta: float) -> void:
-	if not is_player:
+	if not is_player or not uses_player_input:
 		return
 	if Input.is_action_pressed("boost") and boost_meter > 0.0:
 		is_boosting = true
@@ -203,7 +205,7 @@ func get_lateral_speed() -> float:
 
 
 func _handle_weapons() -> void:
-	if not is_player:
+	if not is_player or not uses_player_input:
 		return
 	if Input.is_action_pressed("fire_primary") and primary_weapon and primary_weapon.can_fire():
 		primary_weapon.fire()

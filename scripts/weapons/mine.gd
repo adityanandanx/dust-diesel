@@ -87,10 +87,18 @@ func _detonate(target: VehicleBody3D = null) -> void:
 		if body != self and body is Area3D and body.has_method("_detonate"):
 			body.call_deferred("_detonate")
 
-	queue_free()
+	_deferred_cleanup()
 
 
 ## Allow remote detonation (shot by projectile)
 func take_hit(_dmg: float, _pos: Vector3, _attacker: Node) -> void:
 	if is_armed:
 		_detonate()
+
+
+func _deferred_cleanup() -> void:
+	if is_queued_for_deletion():
+		return
+	set_deferred("monitoring", false)
+	set_deferred("monitorable", false)
+	call_deferred("queue_free")

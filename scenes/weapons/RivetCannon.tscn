@@ -8,6 +8,6 @@ script = ExtResource("1_rc")
 aim_yaw_node_path = NodePath("rivet_cannon")
 aim_pitch_node_path = NodePath("rivet_cannon/Turret")
 
-[node name="rivet_cannon" parent="." unique_id=1973579424 instance=ExtResource("2_g8g3s")]
+[node name="rivet_cannon" parent="." unique_id=2057203675 instance=ExtResource("2_g8g3s")]
 
 [editable path="rivet_cannon"]

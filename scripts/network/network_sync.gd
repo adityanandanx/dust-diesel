@@ -30,8 +30,8 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if not NakamaManager.current_match:
 		return
-		
-	if car.is_player:
+
+	if _is_owned_locally():
 		# We own this car, broadcast our state
 		_sync_timer += delta
 		if _sync_timer >= 1.0 / sync_rate:
@@ -60,9 +60,13 @@ func _physics_process(delta: float) -> void:
 
 
 func _send_sync_packet() -> void:
+	var owner_session_id: String = car.network_id
+	if owner_session_id.is_empty() and NakamaManager.current_match:
+		owner_session_id = NakamaManager.current_match.self_user.session_id
+
 	var quat := car.global_transform.basis.get_rotation_quaternion()
 	var state = {
-		"session_id": NakamaManager.current_match.self_user.session_id,
+		"session_id": owner_session_id,
 		"px": snappedf(car.global_position.x, 0.01),
 		"py": snappedf(car.global_position.y, 0.01),
 		"pz": snappedf(car.global_position.z, 0.01),
@@ -88,6 +92,16 @@ func _send_sync_packet() -> void:
 	if fuel and "fuel" in fuel:
 		state["fuel"] = snappedf(fuel.fuel, 1.0)
 	NakamaManager.send_match_state(NakamaManager.OpCodes.POSITION_SYNC, JSON.stringify(state))
+
+
+func _is_owned_locally() -> bool:
+	if car.is_player:
+		return true
+	if car.has_method("get"):
+		var is_bot: bool = bool(car.get("is_bot"))
+		if is_bot and NakamaManager.is_host:
+			return true
+	return false
 
 
 func _on_match_state(match_state: NakamaRTAPI.MatchData) -> void:

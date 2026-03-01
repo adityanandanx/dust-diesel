@@ -10,6 +10,7 @@ const WreckScene := preload("res://scenes/vehicles/CarWreck.tscn")
 const WeaponScene := preload("res://scenes/weapons/RivetCannon.tscn")
 const WeaponScene2 := preload("res://scenes/weapons/EMPBlaster.tscn")
 const DefaultSpawnPointsScene := preload("res://scenes/game/SpawnPoints.tscn")
+const BotDriverScript := preload("res://scripts/car/bot_driver.gd")
 
 # Must match the order in weapon_pickup.gd _weapon_scenes
 var WEAPON_SCENES: Array[PackedScene] = [
@@ -104,6 +105,8 @@ func _spawn_networked_players() -> void:
 	for sess_id in session_ids:
 		var p_data: Dictionary = NakamaManager.connected_players[sess_id]
 		var is_me = (sess_id == NakamaManager.current_match.self_user.session_id)
+		var is_bot: bool = bool(p_data.get("is_bot", false))
+		var is_locally_owned: bool = is_me or (is_bot and NakamaManager.is_host)
 		
 		var v_id = p_data.get("selected_vehicle", "sedan")
 		var v_data = VehicleRegistry.get_by_id(v_id)
@@ -112,7 +115,9 @@ func _spawn_networked_players() -> void:
 		car.vehicle_data_id = v_id
 		VehicleRegistry.apply_tuning(car, v_id)
 		
-		car.is_player = is_me
+		car.is_player = is_locally_owned
+		car.uses_player_input = is_me
+		car.is_bot = is_bot
 		car.network_id = sess_id
 		car.name = p_data.get("username", "Unknown")
 		cars_container.add_child(car)
@@ -129,12 +134,16 @@ func _spawn_networked_players() -> void:
 		# Default weapons for now
 		car.equip_weapon(WeaponScene.instantiate())
 		car.equip_weapon(WeaponScene2.instantiate())
+		if is_bot and NakamaManager.is_host:
+			_attach_bot_driver(car)
 		
 		if is_me and hud and hud.has_method("bind_car"):
 			hud.bind_car(car)
 		if is_me and top_down_camera and top_down_camera.has_method("set_target"):
 			top_down_camera.set_target(car)
 			
+	if not NakamaManager.player_joined.is_connected(_on_network_player_joined):
+		NakamaManager.player_joined.connect(_on_network_player_joined)
 	NakamaManager.player_left.connect(_on_player_left)
 	NakamaManager.socket.received_match_state.connect(_on_remote_match_state)
 
@@ -220,6 +229,57 @@ func _on_player_left(sess_id: String) -> void:
 	if car:
 		_eliminate_car(car, "disconnected")
 	connected_cars.erase(sess_id)
+
+
+func _on_network_player_joined(sess_id: String, _user_id: String, _username: String) -> void:
+	if not NakamaManager.current_match:
+		return
+	if connected_cars.has(sess_id):
+		return
+	if not (sess_id in NakamaManager.connected_players):
+		return
+
+	var p_data: Dictionary = NakamaManager.connected_players[sess_id]
+	var is_me: bool = (sess_id == NakamaManager.current_match.self_user.session_id)
+	var is_bot: bool = bool(p_data.get("is_bot", false))
+	var is_locally_owned: bool = is_me or (is_bot and NakamaManager.is_host)
+
+	var v_id: String = p_data.get("selected_vehicle", "sedan")
+	var v_data = VehicleRegistry.get_by_id(v_id)
+	var car_scene: PackedScene = load(v_data.scene_path)
+	var car: Car = car_scene.instantiate()
+	car.vehicle_data_id = v_id
+	VehicleRegistry.apply_tuning(car, v_id)
+
+	car.is_player = is_locally_owned
+	car.uses_player_input = is_me
+	car.is_bot = is_bot
+	car.network_id = sess_id
+	car.name = p_data.get("username", "Unknown")
+	cars_container.add_child(car)
+
+	var spawn_transform: Transform3D = Transform3D.IDENTITY
+	if spawn_points and spawn_points.get_child_count() > 0:
+		var idx: int = randi() % spawn_points.get_child_count()
+		var marker: Node3D = spawn_points.get_child(idx) as Node3D
+		if marker:
+			spawn_transform = marker.global_transform
+	car.global_transform = spawn_transform
+
+	car.car_destroyed.connect(_on_car_destroyed)
+	car.car_stalled.connect(_on_car_stalled)
+	alive_cars.append(car)
+	connected_cars[sess_id] = car
+
+	car.equip_weapon(WeaponScene.instantiate())
+	car.equip_weapon(WeaponScene2.instantiate())
+	if is_bot and NakamaManager.is_host:
+		_attach_bot_driver(car)
+
+	if is_me and hud and hud.has_method("bind_car"):
+		hud.bind_car(car)
+	if is_me and top_down_camera and top_down_camera.has_method("set_target"):
+		top_down_camera.set_target(car)
 
 
 func _spawn_players() -> void:
@@ -345,6 +405,17 @@ func _get_live_connected_car(sess_id: String) -> Car:
 		connected_cars.erase(sess_id)
 		return null
 	return car
+
+
+func _attach_bot_driver(car: Car) -> void:
+	if car == null:
+		return
+	if car.get_node_or_null("BotDriver") != null:
+		return
+	var bot_driver := Node.new()
+	bot_driver.name = "BotDriver"
+	bot_driver.set_script(BotDriverScript)
+	car.add_child(bot_driver)
 
 
 func _unhandled_input(event: InputEvent) -> void:

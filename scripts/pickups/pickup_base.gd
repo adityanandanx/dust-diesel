@@ -39,7 +39,7 @@ func _process(delta: float) -> void:
 
 	# Auto-despawn
 	if _age >= despawn_time:
-		queue_free()
+		_deferred_cleanup()
 
 
 func _on_body_entered(body: Node3D) -> void:
@@ -65,8 +65,8 @@ func _on_body_entered(body: Node3D) -> void:
 				"detail": _get_log_detail(),
 			}
 			NakamaManager.send_match_state(NakamaManager.OpCodes.PICKUP_CLAIM, JSON.stringify(data))
-			
-		queue_free()
+
+		_deferred_cleanup()
 
 
 ## Override in subclasses to apply effect
@@ -103,5 +103,15 @@ func _emit_pickup_log(body: Node) -> void:
 	if not hud_node.has_method("add_pickup_log"):
 		return
 
-	var collector_name: String = body.name if body != null else "Unknown"
+	var collector_name: String = "Unknown"
+	if body != null:
+		collector_name = str(body.name)
 	hud_node.add_pickup_log(collector_name, _get_log_kind(), _get_log_detail())
+
+
+func _deferred_cleanup() -> void:
+	if is_queued_for_deletion():
+		return
+	set_deferred("monitoring", false)
+	set_deferred("monitorable", false)
+	call_deferred("queue_free")

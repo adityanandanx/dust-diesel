@@ -8,6 +8,7 @@ signal player_joined(session_id: String, user_id: String, username: String)
 signal player_left(session_id: String)
 signal game_started
 signal map_selected(map_id: String)
+signal bot_count_selected(bot_count: int)
 
 var client: NakamaClient
 var session: NakamaSession
@@ -16,6 +17,7 @@ var current_match: NakamaRTAPI.Match
 var match_name: String = ""
 var is_host: bool = false
 var selected_map: String = "boneyard"
+var selected_bot_count: int = 3
 
 enum OpCodes {
 	POSITION_SYNC = 1,
@@ -28,7 +30,9 @@ enum OpCodes {
 	WEAPON_EQUIP = 8,
 	PLAYER_DEATH = 9,
 	VEHICLE_SELECT = 10,
-	MAP_SELECT = 11
+	MAP_SELECT = 11,
+	BOT_COUNT_SELECT = 12,
+	BOT_SYNC = 13
 }
 
 # Dictionary of session_id to user data
@@ -113,6 +117,7 @@ func create_match(p_match_name: String = "") -> bool:
 	connected_players.clear()
 	is_host = true
 	selected_map = "boneyard"
+	selected_bot_count = 3
 	
 	# Generate a short invite code and store the mapping
 	var code := _generate_short_code()
@@ -188,6 +193,7 @@ func join_match(code: String) -> bool:
 	connected_players.clear()
 	is_host = false
 	selected_map = "boneyard"
+	selected_bot_count = 3
 	
 	_add_player(session.user_id, session.username, current_match.self_user.session_id)
 	
@@ -225,6 +231,7 @@ func _on_match_presence(p_presence: NakamaRTAPI.MatchPresenceEvent) -> void:
 		_broadcast_my_vehicle_selection()
 		if is_host:
 			_broadcast_selected_map()
+			_broadcast_bot_count()
 			
 	for p in p_presence.leaves:
 		if p.session_id in connected_players:
@@ -248,6 +255,15 @@ func _on_match_state(match_state: NakamaRTAPI.MatchData) -> void:
 		if data and "map_id" in data:
 			selected_map = str(data["map_id"])
 			map_selected.emit(selected_map)
+	elif match_state.op_code == OpCodes.BOT_COUNT_SELECT:
+		var data: Dictionary = JSON.parse_string(match_state.data)
+		if data and "bot_count" in data:
+			selected_bot_count = clampi(int(data["bot_count"]), 0, 16)
+			bot_count_selected.emit(selected_bot_count)
+	elif match_state.op_code == OpCodes.BOT_SYNC:
+		var data: Dictionary = JSON.parse_string(match_state.data)
+		if data and "bots" in data:
+			_apply_bot_roster(data["bots"])
 
 
 func _add_player(user_id: String, username: String, sess_id: String) -> void:
@@ -255,7 +271,8 @@ func _add_player(user_id: String, username: String, sess_id: String) -> void:
 		"user_id": user_id,
 		"username": username,
 		"session_id": sess_id,
-		"selected_vehicle": "sedan"
+		"selected_vehicle": "sedan",
+		"is_bot": false
 	}
 	connected_players[sess_id] = p_data
 	player_joined.emit(sess_id, user_id, username)
@@ -289,6 +306,68 @@ func _broadcast_selected_map() -> void:
 		"map_id": selected_map,
 	})
 	send_match_state(OpCodes.MAP_SELECT, payload)
+
+
+func set_bot_count(bot_count: int) -> void:
+	selected_bot_count = clampi(bot_count, 0, 16)
+	bot_count_selected.emit(selected_bot_count)
+	if is_host:
+		_broadcast_bot_count()
+
+
+func sync_bot_roster(bot_entries: Array[Dictionary]) -> void:
+	_apply_bot_roster(bot_entries)
+	if not current_match:
+		return
+	var payload := JSON.stringify({
+		"bots": bot_entries,
+	})
+	send_match_state(OpCodes.BOT_SYNC, payload)
+
+
+func _broadcast_bot_count() -> void:
+	if not current_match:
+		return
+	var payload := JSON.stringify({
+		"bot_count": selected_bot_count,
+	})
+	send_match_state(OpCodes.BOT_COUNT_SELECT, payload)
+
+
+func _apply_bot_roster(bot_variant: Variant) -> void:
+	if not (bot_variant is Array):
+		return
+	var bot_entries: Array = bot_variant
+
+	# Remove stale bots first.
+	var stale_ids: Array[String] = []
+	for sess_id_variant in connected_players.keys():
+		var sess_id: String = str(sess_id_variant)
+		var p: Dictionary = connected_players[sess_id]
+		if bool(p.get("is_bot", false)):
+			stale_ids.append(sess_id)
+	for sess_id in stale_ids:
+		connected_players.erase(sess_id)
+		player_left.emit(sess_id)
+
+	# Add/update new bot roster.
+	for entry_variant in bot_entries:
+		if not (entry_variant is Dictionary):
+			continue
+		var entry: Dictionary = entry_variant
+		var sess_id: String = str(entry.get("session_id", ""))
+		if sess_id.is_empty():
+			continue
+
+		var p_data := {
+			"user_id": str(entry.get("user_id", sess_id)),
+			"username": str(entry.get("username", "Bot")),
+			"session_id": sess_id,
+			"selected_vehicle": str(entry.get("selected_vehicle", "sedan")),
+			"is_bot": true,
+		}
+		connected_players[sess_id] = p_data
+		player_joined.emit(sess_id, p_data["user_id"], p_data["username"])
 
 
 func _generate_short_code() -> String:

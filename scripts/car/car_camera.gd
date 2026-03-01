@@ -105,7 +105,7 @@ func set_target(target: Node3D) -> void:
 		set_process_input(mouse_look_enabled)
 		set_process_unhandled_input(mouse_look_enabled)
 		if mouse_look_enabled and mouse_capture_enabled:
-			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+			_request_mouse_capture()
 	else:
 		_phantom_camera.set("priority", 0)
 		_rotation_initialized = false
@@ -358,6 +358,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	_input(event)
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_WINDOW_FOCUS_IN:
+		if _target and mouse_look_enabled and mouse_capture_enabled:
+			_request_mouse_capture()
+
+
 func _on_zone_damaged(zone: String, current_hp: float, max_hp: float) -> void:
 	if max_hp <= 0.0:
 		return
@@ -417,3 +423,20 @@ func camera_shake_explosion(world_position: Vector3, strength_scale: float = 1.0
 func _exit_tree() -> void:
 	if mouse_capture_enabled:
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+
+func _request_mouse_capture() -> void:
+	# Avoid X11 "NO GRAB" by deferring until the window has focus.
+	call_deferred("_apply_mouse_capture_if_possible")
+
+
+func _apply_mouse_capture_if_possible() -> void:
+	if not is_inside_tree():
+		return
+	if _target == null or not mouse_look_enabled or not mouse_capture_enabled:
+		return
+	var window: Window = get_window()
+	if window and not window.has_focus():
+		return
+	if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
