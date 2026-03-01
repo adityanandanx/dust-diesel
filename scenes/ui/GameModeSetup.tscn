@@ -1,0 +1,160 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://b0ny8b85t0fse" path="res://scripts/ui/game_mode_setup.gd" id="1_setup"]
+
+[sub_resource type="StyleBoxFlat" id="sb_panel"]
+content_margin_left = 30.0
+content_margin_top = 30.0
+content_margin_right = 30.0
+content_margin_bottom = 30.0
+bg_color = Color(0.08, 0.07, 0.06, 0.9)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="sb_btn"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.75, 0.35, 0.15, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="GameModeSetup" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_setup")
+
+[node name="BG" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.12, 0.1, 0.08, 1)
+
+[node name="Center" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -270.0
+offset_top = -240.0
+offset_right = 270.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("sb_panel")
+
+[node name="VBox" type="VBoxContainer" parent="Center"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Center/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "MATCH SETUP"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Center/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 0.65, 1)
+text = "Host configures game mode and match settings"
+horizontal_alignment = 1
+
+[node name="Sep" type="HSeparator" parent="Center/VBox"]
+layout_mode = 2
+
+[node name="ModeRow" type="HBoxContainer" parent="Center/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ModeLabel" type="Label" parent="Center/VBox/ModeRow"]
+layout_mode = 2
+size_flags_horizontal = 1
+text = "GAME MODE"
+
+[node name="ModeSelector" type="OptionButton" parent="Center/VBox/ModeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TimeRow" type="HBoxContainer" parent="Center/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TimeLabel" type="Label" parent="Center/VBox/TimeRow"]
+layout_mode = 2
+size_flags_horizontal = 1
+text = "TIME (MIN)"
+
+[node name="TimeSpin" type="SpinBox" parent="Center/VBox/TimeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+max_value = 60.0
+step = 1.0
+value = 5.0
+rounded = true
+
+[node name="MapRow" type="HBoxContainer" parent="Center/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="MapLabel" type="Label" parent="Center/VBox/MapRow"]
+layout_mode = 2
+size_flags_horizontal = 1
+text = "MAP"
+
+[node name="MapSelector" type="OptionButton" parent="Center/VBox/MapRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BotRow" type="HBoxContainer" parent="Center/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BotLabel" type="Label" parent="Center/VBox/BotRow"]
+layout_mode = 2
+size_flags_horizontal = 1
+text = "BOTS"
+
+[node name="BotCountSpin" type="SpinBox" parent="Center/VBox/BotRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 16.0
+step = 1.0
+value = 3.0
+rounded = true
+
+[node name="StatusLabel" type="Label" parent="Center/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.9, 0.75, 0.95)
+text = "Configure match settings and start."
+horizontal_alignment = 1
+
+[node name="ButtonRow" type="HBoxContainer" parent="Center/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="BackButton" type="Button" parent="Center/VBox/ButtonRow"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("sb_btn")
+text = "← BACK"
+
+[node name="StartButton" type="Button" parent="Center/VBox/ButtonRow"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("sb_btn")
+text = "START MATCH"

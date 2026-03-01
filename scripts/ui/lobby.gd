@@ -2,6 +2,11 @@ extends Control
 
 ## Lobby screen — shows connected players, ready toggle, start button for host.
 
+@export var game_mode_setup_scene: PackedScene
+@export var main_menu_scene: PackedScene
+@export var vehicle_select_scene: PackedScene
+@export var game_scene: PackedScene
+
 @onready var code_label: Label = $Center/VBox/CodeLabel
 @onready var player_list: VBoxContainer = $Center/VBox/PlayerList
 @onready var ready_button: Button = $Center/VBox/ButtonRow/ReadyButton
@@ -27,9 +32,9 @@ func _ready() -> void:
 	start_button.pressed.connect(_on_start_pressed)
 	vehicle_button.pressed.connect(_on_vehicle_pressed)
 	back_button.pressed.connect(_on_back_pressed)
-	map_selector.item_selected.connect(_on_map_selected)
-	bot_count_spin.value_changed.connect(_on_bot_count_changed)
-	_populate_map_selector()
+	map_row.visible = false
+	bot_row.visible = false
+	map_value.visible = false
 
 	if NakamaManager.current_match:
 		invite_code = NakamaManager.match_name
@@ -44,27 +49,16 @@ func _ready() -> void:
 			is_host = NakamaManager.connected_players.size() <= 1
 			NakamaManager.is_host = is_host
 		start_button.visible = is_host
-		map_row.visible = is_host
-		bot_row.visible = is_host
 
 		NakamaManager.player_joined.connect(_on_player_joined)
 		NakamaManager.player_left.connect(_on_player_left)
 		NakamaManager.game_started.connect(_on_game_started)
-		NakamaManager.map_selected.connect(_on_remote_map_selected)
-		NakamaManager.bot_count_selected.connect(_on_remote_bot_count_selected)
 		NakamaManager.socket.received_match_state.connect(_on_match_state)
-		if is_host:
-			_announce_selected_map()
-			NakamaManager.set_bot_count(NakamaManager.selected_bot_count)
-		_update_bot_ui()
-		_update_map_ui()
 		
 		_refresh_players()
 	else:
 		code_label.text = "NOT CONNECTED"
 		start_button.visible = false
-		map_row.visible = false
-		bot_row.visible = false
 
 
 func _on_ready_pressed() -> void:
@@ -74,32 +68,37 @@ func _on_ready_pressed() -> void:
 
 func _on_start_pressed() -> void:
 	if is_host and NakamaManager.current_match:
-		NakamaManager.sync_bot_roster(_build_bot_roster())
-		_announce_selected_map()
-		NakamaManager.send_match_state(NakamaManager.OpCodes.GAME_STARTED, "")
-		_on_game_started()
+		if game_mode_setup_scene:
+			get_tree().change_scene_to_packed(game_mode_setup_scene)
+		else:
+			get_tree().change_scene_to_file("res://scenes/ui/GameModeSetup.tscn")
 
 
 func _on_back_pressed() -> void:
 	NakamaManager.leave_match()
-	get_tree().change_scene_to_file("res://scenes/ui/MainMenu.tscn")
+	if main_menu_scene:
+		get_tree().change_scene_to_packed(main_menu_scene)
+	else:
+		get_tree().change_scene_to_file("res://scenes/ui/MainMenu.tscn")
 
 
 func _on_vehicle_pressed() -> void:
-	get_tree().change_scene_to_file("res://scenes/ui/VehicleSelect.tscn")
+	if vehicle_select_scene:
+		get_tree().change_scene_to_packed(vehicle_select_scene)
+	else:
+		get_tree().change_scene_to_file("res://scenes/ui/VehicleSelect.tscn")
 
 
 func _on_game_started() -> void:
-	get_tree().change_scene_to_file("res://scenes/game/Game.tscn")
+	if game_scene:
+		get_tree().change_scene_to_packed(game_scene)
+	else:
+		get_tree().change_scene_to_file("res://scenes/game/Game.tscn")
 
 
 func _on_match_state(match_state: NakamaRTAPI.MatchData) -> void:
 	if match_state.op_code == NakamaManager.OpCodes.VEHICLE_SELECT:
 		_refresh_players()
-	elif match_state.op_code == NakamaManager.OpCodes.MAP_SELECT:
-		_update_map_ui()
-	elif match_state.op_code == NakamaManager.OpCodes.BOT_COUNT_SELECT:
-		_update_bot_ui()
 	elif match_state.op_code == NakamaManager.OpCodes.BOT_SYNC:
 		_refresh_players()
 
@@ -143,91 +142,3 @@ func _add_player_entry(player_name: String, ready_state: bool, vehicle_id: Strin
 	hbox.add_child(vehicle_label)
 	hbox.add_child(status_label)
 	player_list.add_child(hbox)
-
-
-func _populate_map_selector() -> void:
-	map_selector.clear()
-	_map_ids.clear()
-	var map_registry: Node = get_node_or_null("/root/MapRegistry")
-	if map_registry == null:
-		return
-	for map_data in map_registry.get_all():
-		map_selector.add_item(map_data.display_name)
-		_map_ids.append(map_data.id)
-
-
-func _on_map_selected(index: int) -> void:
-	if _is_updating_map_selector or not is_host:
-		return
-	if index < 0 or index >= _map_ids.size():
-		return
-	NakamaManager.selected_map = _map_ids[index]
-	_announce_selected_map()
-	_update_map_ui()
-
-
-func _on_remote_map_selected(_map_id: String) -> void:
-	_update_map_ui()
-
-
-func _on_remote_bot_count_selected(_bot_count: int) -> void:
-	_update_bot_ui()
-
-
-func _announce_selected_map() -> void:
-	if not NakamaManager.current_match:
-		return
-	var payload := JSON.stringify({
-		"map_id": NakamaManager.selected_map,
-	})
-	NakamaManager.send_match_state(NakamaManager.OpCodes.MAP_SELECT, payload)
-
-
-func _update_map_ui() -> void:
-	if _map_ids.is_empty():
-		map_value.text = "MAP: N/A"
-		return
-	var map_registry: Node = get_node_or_null("/root/MapRegistry")
-	if map_registry == null:
-		map_value.text = "MAP: N/A"
-		return
-
-	var selected_map_id: String = NakamaManager.selected_map
-	var map_index: int = map_registry.get_map_index(selected_map_id)
-	if not map_registry.has_id(selected_map_id):
-		NakamaManager.selected_map = "boneyard"
-		map_index = map_registry.get_map_index("boneyard")
-
-	_is_updating_map_selector = true
-	map_selector.select(map_index)
-	_is_updating_map_selector = false
-
-	var map_data = map_registry.get_by_id(NakamaManager.selected_map)
-	map_value.text = "MAP: %s" % map_data.display_name.to_upper()
-
-
-func _on_bot_count_changed(value: float) -> void:
-	if _is_updating_bot_spin or not is_host:
-		return
-	NakamaManager.set_bot_count(int(value))
-
-
-func _update_bot_ui() -> void:
-	if bot_count_spin == null:
-		return
-	_is_updating_bot_spin = true
-	bot_count_spin.value = NakamaManager.selected_bot_count
-	_is_updating_bot_spin = false
-
-
-func _build_bot_roster() -> Array[Dictionary]:
-	var bots: Array[Dictionary] = []
-	for i in range(NakamaManager.selected_bot_count):
-		var bot_id: String = "bot_%d" % [i + 1]
-		bots.append({
-			"session_id": bot_id,
-			"user_id": bot_id,
-			"username": "BOT %d" % [i + 1],
-			"selected_vehicle": "sedan",
-		})
-	return bots

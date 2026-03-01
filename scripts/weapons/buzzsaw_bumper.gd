@@ -34,5 +34,5 @@ func _on_body_entered(body: Node) -> void:
 	# Apply weapon-grade damage instead of collision damage
 	if body.has_node("DamageSystem"):
 		var dmg = body.get_node("DamageSystem")
-		dmg.take_damage(dmg.DamageZone.CHASSIS, buzzsaw_damage)
-		dmg.take_damage(dmg.DamageZone.ENGINE, buzzsaw_damage * 0.3)
+		dmg.take_damage(dmg.DamageZone.CHASSIS, buzzsaw_damage, owner_car)
+		dmg.take_damage(dmg.DamageZone.ENGINE, buzzsaw_damage * 0.3, owner_car)

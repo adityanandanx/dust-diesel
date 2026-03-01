@@ -9,6 +9,7 @@ signal player_left(session_id: String)
 signal game_started
 signal map_selected(map_id: String)
 signal bot_count_selected(bot_count: int)
+signal game_settings_updated(settings: Dictionary)
 
 var client: NakamaClient
 var session: NakamaSession
@@ -18,6 +19,8 @@ var match_name: String = ""
 var is_host: bool = false
 var selected_map: String = "boneyard"
 var selected_bot_count: int = 3
+var selected_game_mode: String = "free_for_all"
+var selected_match_time_seconds: int = 300
 
 enum OpCodes {
 	POSITION_SYNC = 1,
@@ -32,12 +35,23 @@ enum OpCodes {
 	VEHICLE_SELECT = 10,
 	MAP_SELECT = 11,
 	BOT_COUNT_SELECT = 12,
-	BOT_SYNC = 13
+	BOT_SYNC = 13,
+	GAME_SETTINGS = 14,
+	ROUND_RESTART = 15
 }
 
 # Dictionary of session_id to user data
 var connected_players := {}
 var _auth_complete := false
+const WEB_DEVICE_ID_PATH := "user://nakama_device_id.txt"
+const DEFAULT_NAKAMA_HOST := "127.0.0.1"
+const DEFAULT_NAKAMA_PORT := 7350
+const DEFAULT_NAKAMA_SCHEME := "http"
+
+var _server_host: String = DEFAULT_NAKAMA_HOST
+var _server_port: int = DEFAULT_NAKAMA_PORT
+var _server_scheme: String = DEFAULT_NAKAMA_SCHEME
+var _last_connect_error: String = ""
 
 
 # ---------- Compatibility API for GameState.gd ----------
@@ -65,42 +79,162 @@ func connect_socket_async() -> bool:
 
 
 func _ready() -> void:
-	# Create client to local Nakama server (default config)
-	var server_host := OS.get_environment("NAKAMA_HOST")
-	if server_host == "":
-		server_host = "127.0.0.1"
-	client = Nakama.create_client("defaultkey", server_host, 7350, "http")
+	var nakama_conn := _resolve_nakama_connection()
+	_server_host = str(nakama_conn["host"])
+	_server_port = int(nakama_conn["port"])
+	_server_scheme = str(nakama_conn["scheme"])
+
+	client = Nakama.create_client("defaultkey", _server_host, _server_port, _server_scheme)
 	client.timeout = 10
+	print("Nakama target: ", _server_scheme, "://", _server_host, ":", _server_port)
 	
 	# Authenticate automatically using device UUID
 	_authenticate()
 
 
+func _resolve_nakama_connection() -> Dictionary:
+	var server_host := OS.get_environment("NAKAMA_HOST").strip_edges()
+	var server_port := _parse_nakama_port(OS.get_environment("NAKAMA_PORT").strip_edges(), DEFAULT_NAKAMA_PORT)
+	var server_scheme := OS.get_environment("NAKAMA_SCHEME").strip_edges().to_lower()
+
+	if OS.has_feature("web"):
+		var web_env_host := _web_env_value("NAKAMA_HOST")
+		var web_env_port := _web_env_value("NAKAMA_PORT")
+		var web_env_scheme := _web_env_value("NAKAMA_SCHEME").to_lower()
+		var query_host := _web_query_param("nakama_host")
+		var query_port := _web_query_param("nakama_port")
+		var query_scheme := _web_query_param("nakama_scheme").to_lower()
+
+		if web_env_host != "":
+			server_host = web_env_host
+		if web_env_port != "":
+			server_port = _parse_nakama_port(web_env_port, server_port)
+		if web_env_scheme == "http" or web_env_scheme == "https":
+			server_scheme = web_env_scheme
+
+		if query_host != "":
+			server_host = query_host
+		if query_port != "":
+			server_port = _parse_nakama_port(query_port, server_port)
+		if query_scheme == "http" or query_scheme == "https":
+			server_scheme = query_scheme
+
+	if server_host == "":
+		server_host = DEFAULT_NAKAMA_HOST
+	if server_scheme != "http" and server_scheme != "https":
+		server_scheme = DEFAULT_NAKAMA_SCHEME
+	if server_port <= 0:
+		server_port = DEFAULT_NAKAMA_PORT
+
+	return {
+		"host": server_host,
+		"port": server_port,
+		"scheme": server_scheme,
+	}
+
+
+func _parse_nakama_port(raw_port: String, fallback: int) -> int:
+	var parsed_port := int(raw_port)
+	if parsed_port < 1 or parsed_port > 65535:
+		return fallback
+	return parsed_port
+
+
+func _web_query_param(param_name: String) -> String:
+	if not OS.has_feature("web"):
+		return ""
+	return _web_eval_string("new URLSearchParams(window.location.search).get('%s') || ''" % param_name)
+
+
+func _web_env_value(param_name: String) -> String:
+	if not OS.has_feature("web"):
+		return ""
+	return _web_eval_string("(window.__DUST_DIESEL_ENV__ && window.__DUST_DIESEL_ENV__['%s']) || ''" % param_name)
+
+
+func _web_eval_string(expression: String) -> String:
+	if not OS.has_feature("web"):
+		return ""
+	var result = JavaScriptBridge.eval(expression, true)
+	if result == null:
+		return ""
+	return str(result).strip_edges()
+
+
 func _authenticate() -> void:
-	var device_id := OS.get_unique_id()
-	
-	session = await client.authenticate_device_async(device_id, "Player_" + str(randi() % 1000))
-	if session.is_exception():
-		printerr("Nakama Auth Error: ", session.get_exception().message)
+	var device_id := _get_or_create_device_id()
+	var username := "Player_" + str(randi() % 1000)
+
+	if await _authenticate_with_current_client(device_id, username):
 		return
-		
+
+	# Helpful local-dev fallback: if user pointed to localhost HTTPS/443 (or old defaults),
+	# retry once with Nakama's standard local endpoint.
+	if _is_local_host(_server_host) and (_server_scheme == "https" or _server_port == 443):
+		_server_scheme = "http"
+		_server_port = 7350
+		client = Nakama.create_client("defaultkey", _server_host, _server_port, _server_scheme)
+		client.timeout = 10
+		print("Nakama retry target: ", _server_scheme, "://", _server_host, ":", _server_port)
+		if await _authenticate_with_current_client(device_id, username):
+			return
+
+	printerr("Nakama Auth Error: ", _last_connect_error)
+
+
+func _authenticate_with_current_client(device_id: String, username: String) -> bool:
+	session = await client.authenticate_device_async(device_id, username)
+	if session.is_exception():
+		_last_connect_error = session.get_exception().message
+		return false
+
 	print("Nakama Authenticated: ", session.user_id)
-	
-	# Create and connect socket
+
 	socket = Nakama.create_socket_from(client)
 	var connected: NakamaAsyncResult = await socket.connect_async(session)
 	if connected.is_exception():
-		printerr("Nakama Socket Error: ", connected.get_exception().message)
-		return
-		
+		_last_connect_error = connected.get_exception().message
+		return false
+
 	print("Nakama Socket connected.")
-	
+
 	# Hook up match events
 	socket.received_match_presence.connect(_on_match_presence)
 	socket.received_match_state.connect(_on_match_state)
-	
+
 	_auth_complete = true
 	connected_to_server.emit()
+	return true
+
+
+func _is_local_host(host: String) -> bool:
+	var normalized := host.strip_edges().to_lower()
+	return normalized == "127.0.0.1" or normalized == "localhost" or normalized == "::1"
+
+
+func _get_or_create_device_id() -> String:
+	# OS.get_unique_id() is not available on Web exports.
+	if not OS.has_feature("web"):
+		var native_id := OS.get_unique_id().strip_edges()
+		if native_id != "":
+			return native_id
+
+	# Reuse a previously generated device ID so auth remains stable on this client.
+	if FileAccess.file_exists(WEB_DEVICE_ID_PATH):
+		var existing_file := FileAccess.open(WEB_DEVICE_ID_PATH, FileAccess.READ)
+		if existing_file:
+			var existing_id := existing_file.get_as_text().strip_edges()
+			if existing_id != "":
+				return existing_id
+
+	# Fallback: generate and persist a pseudo-random device ID for platforms that
+	# do not expose a native unique ID.
+	var seed_value := "%s:%s:%s" % [str(Time.get_unix_time_from_system()), str(Time.get_ticks_usec()), str(randi())]
+	var generated_id := "web-" + seed_value.sha256_text().substr(0, 32)
+	var write_file := FileAccess.open(WEB_DEVICE_ID_PATH, FileAccess.WRITE)
+	if write_file:
+		write_file.store_string(generated_id)
+	return generated_id
 
 
 func create_match(p_match_name: String = "") -> bool:
@@ -118,6 +252,8 @@ func create_match(p_match_name: String = "") -> bool:
 	is_host = true
 	selected_map = "boneyard"
 	selected_bot_count = 3
+	selected_game_mode = "free_for_all"
+	selected_match_time_seconds = 300
 	
 	# Generate a short invite code and store the mapping
 	var code := _generate_short_code()
@@ -194,6 +330,8 @@ func join_match(code: String) -> bool:
 	is_host = false
 	selected_map = "boneyard"
 	selected_bot_count = 3
+	selected_game_mode = "free_for_all"
+	selected_match_time_seconds = 300
 	
 	_add_player(session.user_id, session.username, current_match.self_user.session_id)
 	
@@ -212,6 +350,8 @@ func leave_match() -> void:
 		match_name = ""
 		is_host = false
 		selected_map = "boneyard"
+		selected_game_mode = "free_for_all"
+		selected_match_time_seconds = 300
 		connected_players.clear()
 
 
@@ -232,6 +372,7 @@ func _on_match_presence(p_presence: NakamaRTAPI.MatchPresenceEvent) -> void:
 		if is_host:
 			_broadcast_selected_map()
 			_broadcast_bot_count()
+			_broadcast_game_settings()
 			
 	for p in p_presence.leaves:
 		if p.session_id in connected_players:
@@ -260,6 +401,10 @@ func _on_match_state(match_state: NakamaRTAPI.MatchData) -> void:
 		if data and "bot_count" in data:
 			selected_bot_count = clampi(int(data["bot_count"]), 0, 16)
 			bot_count_selected.emit(selected_bot_count)
+	elif match_state.op_code == OpCodes.GAME_SETTINGS:
+		var data: Dictionary = JSON.parse_string(match_state.data)
+		if data:
+			_apply_game_settings(data)
 	elif match_state.op_code == OpCodes.BOT_SYNC:
 		var data: Dictionary = JSON.parse_string(match_state.data)
 		if data and "bots" in data:
@@ -332,6 +477,52 @@ func _broadcast_bot_count() -> void:
 		"bot_count": selected_bot_count,
 	})
 	send_match_state(OpCodes.BOT_COUNT_SELECT, payload)
+
+
+func set_game_settings(game_mode: String, match_time_seconds: int, map_id: String, bot_count: int, broadcast: bool = true) -> void:
+	selected_game_mode = _normalize_game_mode(game_mode)
+	selected_match_time_seconds = clampi(match_time_seconds, 60, 3600)
+	selected_map = map_id if map_id != "" else "boneyard"
+	selected_bot_count = clampi(bot_count, 0, 16)
+
+	map_selected.emit(selected_map)
+	bot_count_selected.emit(selected_bot_count)
+	game_settings_updated.emit(get_game_settings())
+
+	if is_host and broadcast:
+		_broadcast_selected_map()
+		_broadcast_bot_count()
+		_broadcast_game_settings()
+
+
+func get_game_settings() -> Dictionary:
+	return {
+		"game_mode": selected_game_mode,
+		"match_time_seconds": selected_match_time_seconds,
+		"map_id": selected_map,
+		"bot_count": selected_bot_count,
+	}
+
+
+func _broadcast_game_settings() -> void:
+	if not current_match:
+		return
+	send_match_state(OpCodes.GAME_SETTINGS, JSON.stringify(get_game_settings()))
+
+
+func _apply_game_settings(data: Dictionary) -> void:
+	var mode: String = str(data.get("game_mode", selected_game_mode))
+	var time_seconds: int = int(data.get("match_time_seconds", selected_match_time_seconds))
+	var map_id: String = str(data.get("map_id", selected_map))
+	var bot_count: int = int(data.get("bot_count", selected_bot_count))
+	set_game_settings(mode, time_seconds, map_id, bot_count, false)
+
+
+func _normalize_game_mode(game_mode: String) -> String:
+	var mode := game_mode.strip_edges().to_lower()
+	if mode == "free_for_all":
+		return mode
+	return "free_for_all"
 
 
 func _apply_bot_roster(bot_variant: Variant) -> void:

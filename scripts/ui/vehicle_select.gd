@@ -4,6 +4,8 @@ extends Control
 
 const VehicleDataScript = preload("res://scripts/car/vehicle_data.gd")
 
+@export var lobby_scene: PackedScene
+
 var _all_vehicles: Array = []
 var _current_index: int = 0
 var _preview_instance: Node3D = null
@@ -70,7 +72,10 @@ func _on_confirm() -> void:
 		NakamaManager.send_match_state(NakamaManager.OpCodes.VEHICLE_SELECT, payload)
 
 	# Return to lobby
-	get_tree().change_scene_to_file("res://scenes/ui/Lobby.tscn")
+	if lobby_scene:
+		get_tree().change_scene_to_packed(lobby_scene)
+	else:
+		get_tree().change_scene_to_file("res://scenes/ui/Lobby.tscn")
 
 
 func _update_preview() -> void:
@@ -99,4 +104,7 @@ func _update_preview() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		get_tree().change_scene_to_file("res://scenes/ui/Lobby.tscn")
+		if lobby_scene:
+			get_tree().change_scene_to_packed(lobby_scene)
+		else:
+			get_tree().change_scene_to_file("res://scenes/ui/Lobby.tscn")

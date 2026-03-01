@@ -73,7 +73,7 @@ func _apply_impact_damage(collider: Node, hit_position: Vector3, valid_owner: No
 	elif damage_target is VehicleBody3D and damage_target.has_node("DamageSystem"):
 		var dmg_sys: Node = damage_target.get_node("DamageSystem")
 		if dmg_sys and dmg_sys.has_method("take_collision_damage"):
-			dmg_sys.take_collision_damage(damage)
+			dmg_sys.take_collision_damage(damage, valid_owner)
 	elif damage_target is DestructibleBase and not damage_target.is_destroyed:
 		damage_target.take_damage(damage, valid_owner)
 

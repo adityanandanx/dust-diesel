@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dvehselect001"]
 
-[ext_resource type="Script" path="res://scripts/ui/vehicle_select.gd" id="1_vs"]
+[ext_resource type="Script" uid="uid://cpnm5sxqu44sn" path="res://scripts/ui/vehicle_select.gd" id="1_vs"]
 
 [sub_resource type="StyleBoxFlat" id="sb_bg"]
 bg_color = Color(0.08, 0.06, 0.05, 1)

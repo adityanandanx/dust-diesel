@@ -34,21 +34,48 @@ var WEAPON_SCENES: Array[PackedScene] = [
 
 var alive_cars: Array[Car] = []
 var kill_feed: Array[Dictionary] = [] # {victim, killer, cause, time}
+var player_kills: Dictionary = {} # stats_key -> kill_count
+var player_kill_names: Dictionary = {} # stats_key -> display_name
 var connected_cars: Dictionary = {}
 var spawn_points: Node3D = null
 var _active_map_root: Node3D = null
 var _local_respawn_seq: int = 0
+var _game_mode: String = "free_for_all"
+var _match_time_seconds: int = 300
+var _match_timer_running: bool = false
+var _match_has_ended: bool = false
+var _round_restart_in_progress: bool = false
+var _waiting_for_host_restart: bool = false
+
+
+func _is_multiplayer_session() -> bool:
+	return NakamaManager.current_match != null
 
 
 func _ready() -> void:
 	if pause_menu:
 		pause_menu.resume_requested.connect(_on_pause_resume_requested)
 		pause_menu.main_menu_requested.connect(_on_pause_main_menu_requested)
+	if hud:
+		if hud.has_signal("match_end_restart_requested") and not hud.is_connected("match_end_restart_requested", Callable(self , "_on_match_end_restart_requested")):
+			hud.connect("match_end_restart_requested", Callable(self , "_on_match_end_restart_requested"))
+		if hud.has_signal("match_end_rejoin_requested") and not hud.is_connected("match_end_rejoin_requested", Callable(self , "_on_match_end_rejoin_requested")):
+			hud.connect("match_end_rejoin_requested", Callable(self , "_on_match_end_rejoin_requested"))
+		if hud.has_signal("match_end_back_to_menu_requested") and not hud.is_connected("match_end_back_to_menu_requested", Callable(self , "_on_match_end_back_to_menu_requested")):
+			hud.connect("match_end_back_to_menu_requested", Callable(self , "_on_match_end_back_to_menu_requested"))
+		if hud.has_signal("match_end_settings_changed") and not hud.is_connected("match_end_settings_changed", Callable(self , "_on_match_end_settings_changed")):
+			hud.connect("match_end_settings_changed", Callable(self , "_on_match_end_settings_changed"))
+	if not match_ended.is_connected(_on_match_ended):
+		match_ended.connect(_on_match_ended)
+	if NakamaManager.current_match and not NakamaManager.game_settings_updated.is_connected(_on_game_settings_updated):
+		NakamaManager.game_settings_updated.connect(_on_game_settings_updated)
+	_apply_game_settings()
 	_load_selected_map()
 	if NakamaManager.current_match:
 		_spawn_networked_players()
 	else:
 		_spawn_players()
+	_start_match_timer_if_needed()
 
 
 func _load_selected_map() -> void:
@@ -135,6 +162,7 @@ func _spawn_networked_players() -> void:
 		car.car_stalled.connect(_on_car_stalled)
 		alive_cars.append(car)
 		connected_cars[sess_id] = car
+		_ensure_player_kills_entry_for_car(car)
 		
 		_equip_random_starting_weapons(car, str(sess_id))
 		if is_bot and NakamaManager.is_host:
@@ -175,6 +203,8 @@ func _on_remote_match_state(match_state: NakamaRTAPI.MatchData) -> void:
 			return
 			
 		var target_id: String = str(data["target"])
+		var attacker_session_id: String = str(data.get("attacker_session_id", ""))
+		var attacker_name: String = str(data.get("attacker_name", ""))
 		# Apply the damage to the target car on this client.
 		# self_user check is NOT done here — every client applies damage to whatever
 		# car was hit. The broadcaster already applied it locally before sending.
@@ -183,7 +213,7 @@ func _on_remote_match_state(match_state: NakamaRTAPI.MatchData) -> void:
 		var car: Car = _get_live_connected_car(target_id)
 		if car and car.has_node("DamageSystem"):
 			car.get_node("DamageSystem")._apply_damage_internal(
-				int(data["zone"]), float(data["amount"]))
+				int(data["zone"]), float(data["amount"]), null, attacker_session_id, attacker_name)
 				
 	elif match_state.op_code == NakamaManager.OpCodes.ENV_DAMAGE:
 		var data: Dictionary = JSON.parse_string(match_state.data)
@@ -222,9 +252,14 @@ func _on_remote_match_state(match_state: NakamaRTAPI.MatchData) -> void:
 			return # Already handled locally
 		
 		var cause: String = data.get("cause", "destroyed")
+		var killer_session_id: String = str(data.get("killer_session_id", ""))
+		var killer_name: String = str(data.get("killer_name", ""))
 		var car: Car = _get_live_connected_car(sess_id)
 		if car:
-			_eliminate_car(car, cause)
+			_eliminate_car(car, cause, killer_session_id, killer_name)
+	
+	elif match_state.op_code == NakamaManager.OpCodes.ROUND_RESTART:
+		_restart_round_local()
 
 
 func _on_player_left(sess_id: String) -> void:
@@ -275,6 +310,7 @@ func _on_network_player_joined(sess_id: String, _user_id: String, _username: Str
 	car.car_stalled.connect(_on_car_stalled)
 	alive_cars.append(car)
 	connected_cars[sess_id] = car
+	_ensure_player_kills_entry_for_car(car)
 
 	_equip_random_starting_weapons(car, str(sess_id))
 	if is_bot and NakamaManager.is_host:
@@ -311,6 +347,7 @@ func _spawn_players() -> void:
 	car.car_destroyed.connect(_on_car_destroyed)
 	car.car_stalled.connect(_on_car_stalled)
 	alive_cars.append(car)
+	_ensure_player_kills_entry_for_car(car)
 
 	# Connect HUD to this car
 	if hud and hud.has_method("bind_car"):
@@ -335,18 +372,25 @@ func _spawn_players() -> void:
 		dummy.car_destroyed.connect(_on_car_destroyed)
 		dummy.car_stalled.connect(_on_car_stalled)
 		alive_cars.append(dummy)
+		_ensure_player_kills_entry_for_car(dummy)
 		_equip_random_starting_weapons(dummy)
 		_attach_bot_driver(dummy)
 
 func _on_car_destroyed(car: Car) -> void:
+	if _match_has_ended:
+		return
 	_eliminate_car(car, "destroyed")
 
 
 func _on_car_stalled(car: Car) -> void:
+	if _match_has_ended:
+		return
 	_eliminate_car(car, "out of fuel")
 
 
-func _eliminate_car(car: Car, cause: String) -> void:
+func _eliminate_car(car: Car, cause: String, killer_session_id: String = "", killer_name: String = "") -> void:
+	if _match_has_ended:
+		return
 	if not is_instance_valid(car):
 		return
 	if car.is_queued_for_deletion():
@@ -354,6 +398,29 @@ func _eliminate_car(car: Car, cause: String) -> void:
 	if not alive_cars.has(car):
 		# Already eliminated on this client.
 		return
+
+	var resolved_killer_session_id: String = killer_session_id
+	var resolved_killer_name: String = killer_name
+	if cause == "destroyed" and resolved_killer_session_id == "" and resolved_killer_name == "":
+		var killer_info: Dictionary = _resolve_recent_killer_info(car)
+		resolved_killer_session_id = str(killer_info.get("session_id", ""))
+		resolved_killer_name = str(killer_info.get("name", ""))
+	elif cause != "destroyed":
+		resolved_killer_session_id = ""
+		resolved_killer_name = ""
+
+	if resolved_killer_name == "" and resolved_killer_session_id != "":
+		resolved_killer_name = _resolve_player_name_from_session(resolved_killer_session_id)
+
+	if _is_same_player_as_victim(car, resolved_killer_session_id, resolved_killer_name):
+		resolved_killer_session_id = ""
+		resolved_killer_name = ""
+
+	var killer_kill_total: int = -1
+	if cause == "destroyed" and (resolved_killer_session_id != "" or resolved_killer_name != ""):
+		killer_kill_total = _increment_player_kills(resolved_killer_session_id, resolved_killer_name)
+		if resolved_killer_name == "":
+			resolved_killer_name = _resolve_player_name_from_session(resolved_killer_session_id)
 
 	var respawn_snapshot: Dictionary = _build_respawn_snapshot(car)
 
@@ -363,6 +430,10 @@ func _eliminate_car(car: Car, cause: String) -> void:
 			"session_id": NakamaManager.current_match.self_user.session_id,
 			"cause": cause
 		}
+		if resolved_killer_session_id != "":
+			data["killer_session_id"] = resolved_killer_session_id
+		if resolved_killer_name != "":
+			data["killer_name"] = resolved_killer_name
 		NakamaManager.send_match_state(NakamaManager.OpCodes.PLAYER_DEATH, JSON.stringify(data))
 	
 	alive_cars.erase(car)
@@ -374,14 +445,19 @@ func _eliminate_car(car: Car, cause: String) -> void:
 	wreck.linear_velocity = car.linear_velocity * 0.5
 
 	# Log elimination
-	var entry := {"victim": car.name, "killer": "", "cause": cause, "time": Time.get_ticks_msec()}
+	var entry := {"victim": car.name, "killer": resolved_killer_name, "cause": cause, "time": Time.get_ticks_msec()}
 	kill_feed.append(entry)
 	if hud:
 		if hud.has_method("add_elimination_log"):
-			hud.add_elimination_log(car.name, cause, "")
+			hud.add_elimination_log(car.name, cause, resolved_killer_name)
 		elif hud.has_method("add_kill_feed_entry"):
-			hud.add_kill_feed_entry("[KILL] %s (%s)" % [car.name, cause])
-	player_eliminated.emit(car.name, "")
+			if resolved_killer_name == "":
+				hud.add_kill_feed_entry("[KILL] %s (%s)" % [car.name, cause])
+			else:
+				hud.add_kill_feed_entry("[KILL] %s -> %s (%s)" % [resolved_killer_name, car.name, cause])
+		if killer_kill_total >= 0 and hud.has_method("add_log_entry"):
+			hud.add_log_entry("[SCORE] %s: %d kills" % [resolved_killer_name, killer_kill_total], Color(0.75, 0.9, 1.0))
+	player_eliminated.emit(car.name, resolved_killer_name)
 
 	# Detach camera only if the eliminated car is the locally controlled one.
 	if car.uses_player_input and top_down_camera and top_down_camera.has_method("set_target"):
@@ -408,6 +484,203 @@ func _eliminate_car(car: Car, cause: String) -> void:
 		match_ended.emit("Nobody")
 
 
+func _apply_game_settings() -> void:
+	_game_mode = str(NakamaManager.selected_game_mode).to_lower()
+	if _game_mode == "":
+		_game_mode = "free_for_all"
+	_match_time_seconds = clampi(int(NakamaManager.selected_match_time_seconds), 60, 3600)
+	if _game_mode == "free_for_all":
+		respawn_enabled = true
+
+
+func _start_match_timer_if_needed() -> void:
+	if _game_mode != "free_for_all":
+		return
+	if _match_timer_running:
+		return
+	_match_timer_running = true
+	_run_match_timer()
+
+
+func _run_match_timer() -> void:
+	var remaining: int = _match_time_seconds
+	while remaining >= 0 and not _match_has_ended:
+		if hud and hud.has_method("show_match_timer"):
+			hud.show_match_timer(remaining)
+		await get_tree().create_timer(1.0).timeout
+		remaining -= 1
+
+	if _match_has_ended:
+		return
+
+	if hud and hud.has_method("hide_match_timer"):
+		hud.hide_match_timer()
+	_end_match_by_kills()
+
+
+func _end_match_by_kills() -> void:
+	if _match_has_ended:
+		return
+	_match_has_ended = true
+	_match_timer_running = false
+	respawn_enabled = false
+	match_ended.emit(_resolve_winner_from_kills())
+
+
+func _resolve_winner_from_kills() -> String:
+	var best_kills: int = -1
+	var leaders: Array[String] = []
+	for key_variant in player_kills.keys():
+		var key: String = str(key_variant)
+		var kills: int = int(player_kills.get(key, 0))
+		var name: String = str(player_kill_names.get(key, key))
+		if kills > best_kills:
+			best_kills = kills
+			leaders.clear()
+			leaders.append(name)
+		elif kills == best_kills:
+			leaders.append(name)
+
+	if leaders.is_empty():
+		return "Nobody"
+	if leaders.size() == 1:
+		return leaders[0]
+	leaders.sort()
+	return "Tie (%d kills): %s" % [best_kills, ", ".join(leaders)]
+
+
+func _on_match_ended(winner_name: String) -> void:
+	_match_has_ended = true
+	_match_timer_running = false
+	respawn_enabled = false
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	if top_down_camera:
+		top_down_camera.set("mouse_capture_enabled", false)
+	_freeze_match_entities()
+	if hud and hud.has_method("show_match_results"):
+		hud.show_match_results(winner_name, get_kill_counts())
+	if hud and hud.has_method("configure_match_end_menu"):
+		hud.configure_match_end_menu(NakamaManager.is_host, NakamaManager.get_game_settings())
+	if hud and hud.has_method("set_match_end_waiting"):
+		hud.set_match_end_waiting(false, NakamaManager.is_host)
+	if hud and hud.has_method("add_log_entry"):
+		hud.add_log_entry("[MATCH] Time up. Winner: %s" % winner_name, Color(0.98, 0.95, 0.62))
+	if hud and hud.has_method("hide_respawn_countdown"):
+		hud.hide_respawn_countdown()
+	if hud and hud.has_method("hide_match_timer"):
+		hud.hide_match_timer()
+
+
+func _on_match_end_restart_requested() -> void:
+	if not _match_has_ended:
+		return
+	if not NakamaManager.is_host:
+		return
+	_restart_match_for_all()
+
+
+func _on_match_end_rejoin_requested() -> void:
+	if not _match_has_ended:
+		return
+	if NakamaManager.is_host:
+		return
+	_waiting_for_host_restart = true
+	if hud and hud.has_method("set_match_end_waiting"):
+		hud.set_match_end_waiting(true, false)
+	if hud and hud.has_method("add_log_entry"):
+		hud.add_log_entry("[MATCH] Waiting for host restart...", Color(0.88, 0.9, 1.0))
+
+
+func _on_match_end_back_to_menu_requested() -> void:
+	_on_pause_main_menu_requested()
+
+
+func _on_match_end_settings_changed(game_mode: String, match_time_seconds: int, map_id: String, bot_count: int) -> void:
+	if not NakamaManager.is_host:
+		return
+	NakamaManager.set_game_settings(game_mode, match_time_seconds, map_id, bot_count, true)
+	_apply_game_settings()
+
+
+func _on_game_settings_updated(settings: Dictionary) -> void:
+	_game_mode = str(settings.get("game_mode", "free_for_all")).to_lower()
+	_match_time_seconds = clampi(int(settings.get("match_time_seconds", 300)), 60, 3600)
+	if _match_has_ended and hud and hud.has_method("configure_match_end_menu"):
+		hud.configure_match_end_menu(NakamaManager.is_host, settings)
+	if _match_has_ended and hud and hud.has_method("set_match_end_waiting"):
+		hud.set_match_end_waiting(_waiting_for_host_restart, NakamaManager.is_host)
+
+
+func _restart_match_for_all() -> void:
+	if _round_restart_in_progress:
+		return
+	_round_restart_in_progress = true
+
+	var bot_entries: Array[Dictionary] = _build_bot_roster_from_settings()
+	NakamaManager.sync_bot_roster(bot_entries)
+	if NakamaManager.current_match:
+		NakamaManager.send_match_state(NakamaManager.OpCodes.ROUND_RESTART, JSON.stringify({
+			"at": Time.get_ticks_msec()
+		}))
+	_restart_round_local(true)
+
+
+func _restart_round_local(force: bool = false) -> void:
+	if _round_restart_in_progress and not force:
+		return
+	_round_restart_in_progress = true
+	get_tree().paused = false
+	_waiting_for_host_restart = false
+	if hud and hud.has_method("hide_match_results"):
+		hud.hide_match_results()
+	get_tree().change_scene_to_file("res://scenes/game/Game.tscn")
+
+
+func _freeze_match_entities() -> void:
+	for child in cars_container.get_children():
+		if child is Car:
+			_freeze_car(child as Car)
+	for child in wrecks_container.get_children():
+		if child is RigidBody3D:
+			var body: RigidBody3D = child as RigidBody3D
+			body.freeze = true
+			body.linear_velocity = Vector3.ZERO
+			body.angular_velocity = Vector3.ZERO
+	if pickup_spawner:
+		pickup_spawner.set_process(false)
+		pickup_spawner.set_physics_process(false)
+
+
+func _freeze_car(car: Car) -> void:
+	if car == null:
+		return
+	car.is_alive = false
+	car.is_player = false
+	car.uses_player_input = false
+	car.engine_force = 0.0
+	car.brake = car.max_brake_force
+	car.linear_velocity = Vector3.ZERO
+	car.angular_velocity = Vector3.ZERO
+	car.freeze = true
+	var bot_driver: Node = car.get_node_or_null("BotDriver")
+	if bot_driver:
+		bot_driver.set_process(false)
+		bot_driver.set_physics_process(false)
+
+
+func _build_bot_roster_from_settings() -> Array[Dictionary]:
+	var bots: Array[Dictionary] = []
+	for i in range(NakamaManager.selected_bot_count):
+		var bot_id: String = "bot_%d" % [i + 1]
+		bots.append({
+			"session_id": bot_id,
+			"user_id": bot_id,
+			"username": "BOT %d" % [i + 1],
+			"selected_vehicle": "sedan",
+		})
+	return bots
+
+
 func _get_live_connected_car(sess_id: String) -> Car:
 	if not (sess_id in connected_cars):
 		return null
@@ -420,6 +693,97 @@ func _get_live_connected_car(sess_id: String) -> Car:
 		connected_cars.erase(sess_id)
 		return null
 	return car
+
+
+func get_kill_counts() -> Dictionary:
+	var kills_by_player: Dictionary = {}
+	for key_variant in player_kills.keys():
+		var key: String = str(key_variant)
+		var count: int = int(player_kills.get(key, 0))
+		var player_name: String = str(player_kill_names.get(key, key))
+		kills_by_player[key] = {
+			"name": player_name,
+			"kills": count,
+		}
+	return kills_by_player
+
+
+func _resolve_recent_killer_info(victim: Car) -> Dictionary:
+	if victim == null:
+		return {}
+	if not victim.has_method("get_recent_attacker_info"):
+		return {}
+	var info: Dictionary = victim.get_recent_attacker_info()
+	var session_id: String = str(info.get("session_id", ""))
+	var name: String = str(info.get("name", ""))
+	if session_id == "" and name == "":
+		return {}
+	if name == "" and session_id != "":
+		name = _resolve_player_name_from_session(session_id)
+	return {
+		"session_id": session_id,
+		"name": name,
+	}
+
+
+func _is_same_player_as_victim(victim: Car, killer_session_id: String, killer_name: String) -> bool:
+	if victim == null:
+		return false
+	if killer_session_id != "" and victim.network_id != "" and killer_session_id == victim.network_id:
+		return true
+	if killer_session_id == "" and victim.network_id == "" and killer_name != "" and killer_name == victim.name:
+		return true
+	return false
+
+
+func _ensure_player_kills_entry_for_car(car: Car) -> void:
+	if car == null:
+		return
+	var stats_key: String = _make_player_stats_key(car.network_id, car.name)
+	if stats_key == "":
+		return
+	if not player_kills.has(stats_key):
+		player_kills[stats_key] = 0
+	player_kill_names[stats_key] = car.name
+
+
+func _increment_player_kills(session_id: String, player_name: String) -> int:
+	var resolved_name: String = player_name
+	if resolved_name == "" and session_id != "":
+		resolved_name = _resolve_player_name_from_session(session_id)
+	var stats_key: String = _make_player_stats_key(session_id, resolved_name)
+	if stats_key == "":
+		return -1
+	var current_kills: int = int(player_kills.get(stats_key, 0)) + 1
+	player_kills[stats_key] = current_kills
+	if resolved_name != "":
+		player_kill_names[stats_key] = resolved_name
+	return current_kills
+
+
+func _make_player_stats_key(session_id: String, player_name: String) -> String:
+	if session_id != "":
+		return "session:%s" % session_id
+	if player_name != "":
+		return "name:%s" % player_name
+	return ""
+
+
+func _resolve_player_name_from_session(session_id: String) -> String:
+	if session_id == "":
+		return ""
+	var live_car: Car = _get_live_connected_car(session_id)
+	if live_car:
+		return live_car.name
+	if session_id in NakamaManager.connected_players:
+		var player_data: Dictionary = NakamaManager.connected_players[session_id]
+		var username: String = str(player_data.get("username", ""))
+		if username != "":
+			return username
+	var stats_key: String = _make_player_stats_key(session_id, "")
+	if player_kill_names.has(stats_key):
+		return str(player_kill_names[stats_key])
+	return ""
 
 
 func _attach_bot_driver(car: Car) -> void:
@@ -445,6 +809,8 @@ func _build_respawn_snapshot(car: Car) -> Dictionary:
 
 
 func _schedule_respawn(snapshot: Dictionary) -> void:
+	if _match_has_ended:
+		return
 	var seq: int = -1
 	if bool(snapshot.get("uses_player_input", false)):
 		_local_respawn_seq += 1
@@ -453,16 +819,22 @@ func _schedule_respawn(snapshot: Dictionary) -> void:
 
 
 func _respawn_after_delay(snapshot: Dictionary, local_seq: int) -> void:
+	if _match_has_ended:
+		return
 	var local_player_respawn: bool = bool(snapshot.get("uses_player_input", false))
 	var countdown: int = maxi(1, int(ceil(respawn_delay_seconds)))
 
 	while countdown > 0:
+		if _match_has_ended:
+			return
 		if local_player_respawn and local_seq == _local_respawn_seq and hud and hud.has_method("show_respawn_countdown"):
 			hud.show_respawn_countdown(countdown)
 		await get_tree().create_timer(1.0).timeout
 		countdown -= 1
 
 	if not is_inside_tree():
+		return
+	if _match_has_ended:
 		return
 
 	if local_player_respawn and local_seq == _local_respawn_seq and hud and hud.has_method("hide_respawn_countdown"):
@@ -472,6 +844,8 @@ func _respawn_after_delay(snapshot: Dictionary, local_seq: int) -> void:
 
 
 func _respawn_car(snapshot: Dictionary) -> void:
+	if _match_has_ended:
+		return
 	var vehicle_id: String = str(snapshot.get("vehicle_data_id", "sedan"))
 	var vehicle_data: Variant = VehicleRegistry.get_by_id(vehicle_id)
 	var scene_path: String = ""
@@ -505,6 +879,7 @@ func _respawn_car(snapshot: Dictionary) -> void:
 	car.car_destroyed.connect(_on_car_destroyed)
 	car.car_stalled.connect(_on_car_stalled)
 	alive_cars.append(car)
+	_ensure_player_kills_entry_for_car(car)
 
 	if car.network_id != "":
 		connected_cars[car.network_id] = car
@@ -593,16 +968,29 @@ func _pick_seeded_index(candidates: Array[int], seed_key: String = "") -> int:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		if get_tree().paused:
+		if pause_menu and pause_menu.visible:
 			_on_pause_resume_requested()
 		else:
-			_open_pause_menu()
+			if _is_multiplayer_session():
+				_open_multiplayer_menu()
+			else:
+				_open_pause_menu()
 
 
 func _open_pause_menu() -> void:
 	if pause_menu == null:
 		return
+	pause_menu.configure_for_multiplayer(false)
 	get_tree().paused = true
+	pause_menu.visible = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+
+func _open_multiplayer_menu() -> void:
+	if pause_menu == null:
+		return
+	pause_menu.configure_for_multiplayer(true)
+	get_tree().paused = false
 	pause_menu.visible = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
@@ -611,6 +999,9 @@ func _on_pause_resume_requested() -> void:
 	get_tree().paused = false
 	if pause_menu:
 		pause_menu.visible = false
+	if _match_has_ended:
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		return
 	if top_down_camera and top_down_camera.get("mouse_capture_enabled"):
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 

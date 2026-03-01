@@ -14,6 +14,7 @@ var is_destroyed: bool = false
 var loot_table: Array[PackedScene] = []
 var loot_count: int = 1
 static var _loot_id_counter: int = 0
+var _last_attacker: Node = null
 
 
 func _ready() -> void:
@@ -26,6 +27,8 @@ func _ready() -> void:
 func take_damage(amount: float, attacker: Node = null) -> void:
 	if is_destroyed:
 		return
+	if attacker != null and is_instance_valid(attacker):
+		_last_attacker = attacker
 		
 	# Broadcast the damage to others
 	if NakamaManager.current_match:
@@ -62,11 +65,22 @@ func _on_body_entered(body: Node) -> void:
 func _destroy(attacker: Node = null) -> void:
 	if is_destroyed:
 		return
+	if attacker == null:
+		attacker = get_last_attacker()
 	is_destroyed = true
 	destroyed.emit(global_position, attacker)
 	_on_destroyed()
 	_drop_loot()
 	queue_free()
+
+
+func get_last_attacker() -> Node:
+	if _last_attacker == null:
+		return null
+	if not is_instance_valid(_last_attacker):
+		_last_attacker = null
+		return null
+	return _last_attacker
 
 
 ## Override in subclasses for custom destruction effects

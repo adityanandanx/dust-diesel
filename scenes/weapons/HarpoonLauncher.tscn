@@ -1,21 +1,18 @@
 [gd_scene format=3 uid="uid://b2illmdx4v600"]
 
 [ext_resource type="Script" uid="uid://ckchsybyv1fnm" path="res://scripts/weapons/harpoon_launcher.gd" id="1_hl"]
-[ext_resource type="PackedScene" uid="uid://cajd6aukxtx8x" path="res://assets/models/weapons/harpoon.blend" id="2_so5t1"]
+[ext_resource type="PackedScene" uid="uid://rqpp1i2pusge" path="res://assets/models/weapons/harpoon.blend" id="2_so5t1"]
 
 [node name="HarpoonLauncher" type="Node3D" unique_id=2085900769]
 script = ExtResource("1_hl")
-mount_type = 0
-fire_rate = 0.5
-damage = 15.0
-reload_type = 2
-max_ammo = -1
-recoil_impulse = 90.0
-recoil_torque_impulse = 6.0
 aim_yaw_node_path = NodePath("harpoon")
 aim_pitch_node_path = NodePath("harpoon/Circle_002")
+damage = 15.0
+fire_rate = 0.5
+recoil_impulse = 90.0
+recoil_torque_impulse = 6.0
 
-[node name="harpoon" parent="." unique_id=238712482 instance=ExtResource("2_so5t1")]
+[node name="harpoon" parent="." unique_id=1982641469 instance=ExtResource("2_so5t1")]
 
 [node name="RopeOrigin" type="Marker3D" parent="." unique_id=913744221]
 transform = Transform3D(1, 0, 0, 0, 0.99999994, 0, 0, 0, 0.99999994, 0, 0.38029274, 0.4253245)

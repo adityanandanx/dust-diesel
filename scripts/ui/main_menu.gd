@@ -2,6 +2,8 @@ extends Control
 
 ## Main Menu — create or join a game session.
 
+@export var lobby_scene: PackedScene
+
 @onready var join_code_input: LineEdit = $CenterPanel/VBox/JoinRow/CodeInput
 @onready var status_label: Label = $CenterPanel/VBox/StatusLabel
 
@@ -28,7 +30,10 @@ func _on_create_pressed() -> void:
 		return
 	var tree: SceneTree = get_tree()
 	if tree:
-		tree.change_scene_to_file("res://scenes/ui/Lobby.tscn")
+		if lobby_scene:
+			tree.change_scene_to_packed(lobby_scene)
+		else:
+			tree.change_scene_to_file("res://scenes/ui/Lobby.tscn")
 	_is_connecting = false
 
 
@@ -51,7 +56,10 @@ func _on_join_pressed() -> void:
 		return
 	var tree: SceneTree = get_tree()
 	if tree:
-		tree.change_scene_to_file("res://scenes/ui/Lobby.tscn")
+		if lobby_scene:
+			tree.change_scene_to_packed(lobby_scene)
+		else:
+			tree.change_scene_to_file("res://scenes/ui/Lobby.tscn")
 	_is_connecting = false
 
 

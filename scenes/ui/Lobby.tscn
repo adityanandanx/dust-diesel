@@ -87,44 +87,42 @@ custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="VehicleButton" type="Button" parent="Center/VBox"]
+[node name="VehicleButton" type="Button" parent="Center/VBox" unique_id=1814391327]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("sb_btn")
 text = "⚙ CHOOSE VEHICLE"
 
-[node name="MapRow" type="HBoxContainer" parent="Center/VBox"]
+[node name="MapRow" type="HBoxContainer" parent="Center/VBox" unique_id=242361937]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="MapLabel" type="Label" parent="Center/VBox/MapRow"]
+[node name="MapLabel" type="Label" parent="Center/VBox/MapRow" unique_id=245817000]
 layout_mode = 2
 text = "MAP"
 
-[node name="MapSelector" type="OptionButton" parent="Center/VBox/MapRow"]
+[node name="MapSelector" type="OptionButton" parent="Center/VBox/MapRow" unique_id=934419792]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="MapValue" type="Label" parent="Center/VBox"]
+[node name="MapValue" type="Label" parent="Center/VBox" unique_id=476235649]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.85, 0.65, 1)
 text = "MAP: BONEYARD"
 horizontal_alignment = 1
 
-[node name="BotRow" type="HBoxContainer" parent="Center/VBox"]
+[node name="BotRow" type="HBoxContainer" parent="Center/VBox" unique_id=756800605]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="BotLabel" type="Label" parent="Center/VBox/BotRow"]
+[node name="BotLabel" type="Label" parent="Center/VBox/BotRow" unique_id=1311420639]
 layout_mode = 2
 text = "BOTS"
 
-[node name="BotCountSpin" type="SpinBox" parent="Center/VBox/BotRow"]
+[node name="BotCountSpin" type="SpinBox" parent="Center/VBox/BotRow" unique_id=1352483348]
 layout_mode = 2
 size_flags_horizontal = 3
-min_value = 0.0
 max_value = 16.0
-step = 1.0
 value = 3.0
 rounded = true
 

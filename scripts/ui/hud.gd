@@ -2,6 +2,13 @@ extends Control
 
 ## In-game HUD — speed, fuel/boost, dual weapons, powerups, damage, and vehicle part health.
 
+signal match_end_restart_requested()
+signal match_end_rejoin_requested()
+signal match_end_back_to_menu_requested()
+signal match_end_settings_changed(game_mode: String, match_time_seconds: int, map_id: String, bot_count: int)
+
+const MATCH_END_DIALOG_SCENE: PackedScene = preload("res://scenes/ui/MatchEndDialog.tscn")
+
 @export_group("Debug")
 @export var debug_overlay_enabled: bool = false
 @export var debug_overlay_position: Vector2 = Vector2(16.0, 16.0)
@@ -67,6 +74,8 @@ var _minimap_dots: Dictionary = {}
 var _minimap_heading_dir: Vector2 = Vector2(0.0, -1.0)
 var _minimap_env_applied: bool = false
 var _respawn_countdown_label: Label = null
+var _match_timer_label: Label = null
+var _match_result_overlay = null
 
 var _part_textures: Dictionary = {}
 var _weapon_textures: Dictionary = {}
@@ -79,6 +88,8 @@ func _ready() -> void:
 	_ensure_debug_overlay_label()
 	_ensure_crosshair()
 	_ensure_respawn_countdown_label()
+	_ensure_match_timer_label()
+	_ensure_match_result_overlay()
 	_set_debug_overlay_visible(debug_overlay_enabled)
 	_build_placeholder_textures()
 	_apply_static_placeholder_textures()
@@ -160,11 +171,10 @@ func add_kill_feed_entry(text: String) -> void:
 
 
 func add_elimination_log(victim_name: String, cause: String, killer_name: String = "") -> void:
-	var msg: String
-	if killer_name.is_empty():
-		msg = "[KILL] %s (%s)" % [victim_name, cause]
-	else:
-		msg = "[KILL] %s -> %s (%s)" % [killer_name, victim_name, cause]
+	var killer_label: String = killer_name.strip_edges()
+	if killer_label.is_empty():
+		killer_label = "Unknown"
+	var msg: String = "[KILL] %s -> %s (%s)" % [killer_label, victim_name, cause]
 	add_log_entry(msg, Color(1.0, 0.72, 0.52))
 
 
@@ -189,6 +199,47 @@ func show_respawn_countdown(seconds_left: int) -> void:
 func hide_respawn_countdown() -> void:
 	if _respawn_countdown_label:
 		_respawn_countdown_label.visible = false
+
+
+func show_match_timer(seconds_left: int) -> void:
+	_ensure_match_timer_label()
+	if _match_timer_label == null:
+		return
+	var secs: int = maxi(seconds_left, 0)
+	var mins: int = int(secs / 60.0)
+	var rem: int = secs % 60
+	_match_timer_label.text = "FFA %02d:%02d" % [mins, rem]
+	_match_timer_label.visible = true
+
+
+func hide_match_timer() -> void:
+	if _match_timer_label:
+		_match_timer_label.visible = false
+
+
+func show_match_results(winner_name: String, kill_counts: Dictionary) -> void:
+	_ensure_match_result_overlay()
+	if _match_result_overlay == null:
+		return
+	_match_result_overlay.show_results(winner_name, kill_counts)
+
+
+func hide_match_results() -> void:
+	if _match_result_overlay:
+		_match_result_overlay.hide_results()
+
+
+func configure_match_end_menu(is_host: bool, settings: Dictionary) -> void:
+	_ensure_match_result_overlay()
+	if _match_result_overlay == null:
+		return
+	_match_result_overlay.configure_menu(is_host, settings)
+
+
+func set_match_end_waiting(waiting: bool, is_host: bool = false) -> void:
+	if _match_result_overlay == null:
+		return
+	_match_result_overlay.set_waiting(waiting, is_host)
 
 
 func _setup_minimap_view() -> void:
@@ -779,6 +830,67 @@ func _ensure_respawn_countdown_label() -> void:
 	label.visible = false
 	add_child(label)
 	_respawn_countdown_label = label
+
+
+func _ensure_match_timer_label() -> void:
+	if _match_timer_label:
+		return
+	var label := Label.new()
+	label.name = "MatchTimer"
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.anchor_left = 0.5
+	label.anchor_top = 0.0
+	label.anchor_right = 0.5
+	label.anchor_bottom = 0.0
+	label.offset_left = -120.0
+	label.offset_top = 18.0
+	label.offset_right = 120.0
+	label.offset_bottom = 48.0
+	label.modulate = Color(1.0, 0.95, 0.78, 0.98)
+	label.add_theme_font_size_override("font_size", 24)
+	label.add_theme_color_override("font_shadow_color", Color(0.05, 0.05, 0.05, 0.9))
+	label.add_theme_constant_override("shadow_offset_x", 2)
+	label.add_theme_constant_override("shadow_offset_y", 2)
+	label.visible = false
+	add_child(label)
+	_match_timer_label = label
+
+
+func _ensure_match_result_overlay() -> void:
+	if _match_result_overlay:
+		return
+	var overlay_instance: Node = MATCH_END_DIALOG_SCENE.instantiate()
+	if not (overlay_instance is Control):
+		push_warning("MatchEndDialog scene root must inherit Control.")
+		return
+	if not overlay_instance.has_signal("restart_requested"):
+		push_warning("MatchEndDialog scene is missing expected signals.")
+		return
+	_match_result_overlay = overlay_instance as Control
+	_match_result_overlay.name = "MatchResultsOverlay"
+	_match_result_overlay.restart_requested.connect(_on_match_end_dialog_restart_requested)
+	_match_result_overlay.rejoin_requested.connect(_on_match_end_dialog_rejoin_requested)
+	_match_result_overlay.back_to_menu_requested.connect(_on_match_end_dialog_back_to_menu_requested)
+	_match_result_overlay.settings_changed.connect(_on_match_end_dialog_settings_changed)
+	add_child(_match_result_overlay)
+
+
+func _on_match_end_dialog_restart_requested() -> void:
+	match_end_restart_requested.emit()
+
+
+func _on_match_end_dialog_rejoin_requested() -> void:
+	match_end_rejoin_requested.emit()
+
+
+func _on_match_end_dialog_back_to_menu_requested() -> void:
+	match_end_back_to_menu_requested.emit()
+
+
+func _on_match_end_dialog_settings_changed(game_mode: String, match_time_seconds: int, map_id: String, bot_count: int) -> void:
+	match_end_settings_changed.emit(game_mode, match_time_seconds, map_id, bot_count)
 
 
 func _set_debug_overlay_visible(visible_state: bool) -> void:

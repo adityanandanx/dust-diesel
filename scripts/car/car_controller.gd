@@ -2,6 +2,7 @@ extends VehicleBody3D
 class_name Car
 
 const EMP_LIGHTNING_SHADER: Shader = preload("res://resources/emp_lightning.gdshader")
+const KILL_CREDIT_WINDOW_MS: int = 12000
 
 ## Main vehicle controller — input, steering, acceleration, boost.
 ## Integrates with child DriftSystem, FuelSystem, DamageSystem nodes.
@@ -61,6 +62,9 @@ var _emp_fx_active: bool = false
 var _emp_meshes: Array[MeshInstance3D] = []
 var _emp_original_overlays: Dictionary = {}
 var _aim_point_world: Vector3 = Vector3.ZERO
+var _last_attacker_session_id: String = ""
+var _last_attacker_name: String = ""
+var _last_attacker_timestamp_ms: int = 0
 
 # ---------- Weapons ----------
 var primary_weapon: WeaponBase = null
@@ -420,14 +424,65 @@ func _weapon_recoil_intensity(weapon: WeaponBase) -> float:
 	return clampf(recoil / 450.0, 0.35, 2.0)
 
 
-func take_hit(amount: float, hit_position: Vector3, _attacker: Node) -> void:
+func take_hit(amount: float, hit_position: Vector3, attacker: Node) -> void:
 	if not is_alive or damage_system == null:
 		return
 	if amount <= 0.0:
 		return
 
 	var zone: CarDamageSystem.DamageZone = _resolve_hit_zone(hit_position)
-	damage_system.take_damage(zone, amount)
+	damage_system.take_damage(zone, amount, attacker)
+
+
+func register_damage_attacker(attacker: Node) -> void:
+	if attacker == null:
+		return
+	if not is_instance_valid(attacker):
+		return
+	if not (attacker is Car):
+		return
+	var attacker_car: Car = attacker as Car
+	if attacker_car == self:
+		return
+	var attacker_session_id: String = attacker_car.network_id
+	if attacker_session_id == "" and NakamaManager.current_match and attacker_car.uses_player_input:
+		attacker_session_id = NakamaManager.current_match.self_user.session_id
+	_store_attacker_info(attacker_session_id, attacker_car.name)
+
+
+func register_damage_attacker_info(attacker_session_id: String, attacker_name: String = "") -> void:
+	if attacker_session_id == "" and attacker_name == "":
+		return
+	if attacker_session_id != "" and network_id != "" and attacker_session_id == network_id:
+		return
+	if attacker_session_id == "" and attacker_name == name:
+		return
+	_store_attacker_info(attacker_session_id, attacker_name)
+
+
+func get_recent_attacker_info(max_age_ms: int = KILL_CREDIT_WINDOW_MS) -> Dictionary:
+	if _last_attacker_timestamp_ms <= 0:
+		return {}
+	var age_ms: int = Time.get_ticks_msec() - _last_attacker_timestamp_ms
+	if age_ms > max_age_ms:
+		return {}
+	return {
+		"session_id": _last_attacker_session_id,
+		"name": _last_attacker_name,
+		"age_ms": age_ms,
+	}
+
+
+func clear_recent_attacker() -> void:
+	_last_attacker_session_id = ""
+	_last_attacker_name = ""
+	_last_attacker_timestamp_ms = 0
+
+
+func _store_attacker_info(attacker_session_id: String, attacker_name: String) -> void:
+	_last_attacker_session_id = attacker_session_id
+	_last_attacker_name = attacker_name
+	_last_attacker_timestamp_ms = Time.get_ticks_msec()
 
 
 func _resolve_hit_zone(hit_position: Vector3) -> CarDamageSystem.DamageZone:

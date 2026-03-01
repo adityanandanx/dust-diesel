@@ -16,6 +16,8 @@ func _ready() -> void:
 
 
 func _on_destroyed() -> void:
+	var attacker: Node = get_last_attacker()
+
 	# Spawn explosion particles
 	if explosion_scene:
 		var fx: Node3D = explosion_scene.instantiate()
@@ -43,7 +45,8 @@ func _on_destroyed() -> void:
 			var falloff := 1.0 - clampf(dist / 5.0, 0.0, 1.0)
 			body.get_node("DamageSystem").take_damage(
 				body.get_node("DamageSystem").DamageZone.CHASSIS,
-				20.0 * falloff
+				20.0 * falloff,
+				attacker
 			)
 			var push = (body.global_position - global_position).normalized()
 			body.apply_central_impulse(push * 3000.0 * falloff)

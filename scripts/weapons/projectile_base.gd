@@ -70,7 +70,7 @@ func _on_hit(collision: KinematicCollision3D) -> void:
 	elif damage_target is VehicleBody3D and damage_target.has_node("DamageSystem"):
 		var dmg_sys: Node = damage_target.get_node("DamageSystem")
 		if dmg_sys and dmg_sys.has_method("take_collision_damage"):
-			dmg_sys.take_collision_damage(damage)
+			dmg_sys.take_collision_damage(damage, valid_owner)
 	elif damage_target is DestructibleBase and not damage_target.is_destroyed:
 		damage_target.take_damage(damage, valid_owner)
 
@@ -128,7 +128,7 @@ func _apply_splash(center: Vector3) -> void:
 		if damage_target and damage_target.has_method("take_hit"):
 			damage_target.take_hit(splash_damage * falloff, center, valid_owner)
 		elif damage_target is VehicleBody3D and damage_target.has_node("DamageSystem"):
-			damage_target.get_node("DamageSystem").take_collision_damage(splash_damage * falloff)
+			damage_target.get_node("DamageSystem").take_collision_damage(splash_damage * falloff, valid_owner)
 		elif damage_target is DestructibleBase and not damage_target.is_destroyed:
 			damage_target.take_damage(splash_damage * falloff, valid_owner)
 

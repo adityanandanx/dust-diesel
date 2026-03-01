@@ -24,6 +24,8 @@ func _on_destroyed() -> void:
 
 
 func _mega_explosion() -> void:
+	var attacker: Node = get_last_attacker()
+
 	# Spawn massive explosion particles
 	if explosion_scene:
 		var fx: Node3D = explosion_scene.instantiate()
@@ -53,14 +55,14 @@ func _mega_explosion() -> void:
 		# Massive damage to cars
 		if body is VehicleBody3D and body.has_node("DamageSystem"):
 			var dmg_sys = body.get_node("DamageSystem")
-			dmg_sys.take_damage(dmg_sys.DamageZone.CHASSIS, 80.0 * falloff)
-			dmg_sys.take_damage(dmg_sys.DamageZone.ENGINE, 40.0 * falloff)
+			dmg_sys.take_damage(dmg_sys.DamageZone.CHASSIS, 80.0 * falloff, attacker)
+			dmg_sys.take_damage(dmg_sys.DamageZone.ENGINE, 40.0 * falloff, attacker)
 			var push = (body.global_position - global_position).normalized()
 			body.apply_central_impulse(push * 15000.0 * falloff)
 
 		# Destroy nearby destructibles
 		if body is DestructibleBase and not body.is_destroyed:
-			body.take_damage(200.0, self )
+			body.take_damage(200.0, attacker)
 
 		# Fling any RigidBody3D
 		if body is RigidBody3D and body != self:

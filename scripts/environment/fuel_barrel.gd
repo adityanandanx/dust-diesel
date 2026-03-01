@@ -19,6 +19,8 @@ func _on_destroyed() -> void:
 
 
 func _explode() -> void:
+	var attacker: Node = get_last_attacker()
+
 	# Spawn explosion particles
 	if explosion_scene:
 		var fx: Node3D = explosion_scene.instantiate()
@@ -50,11 +52,11 @@ func _explode() -> void:
 		# Damage cars
 		if body is VehicleBody3D and body.has_node("DamageSystem"):
 			body.get_node("DamageSystem").take_damage(
-				body.get_node("DamageSystem").DamageZone.CHASSIS, dmg
+				body.get_node("DamageSystem").DamageZone.CHASSIS, dmg, attacker
 			)
 			var push = (body.global_position - global_position).normalized()
 			body.apply_central_impulse(push * 6000.0 * falloff)
 
 		# Chain-react other destructibles
 		if body is DestructibleBase and not body.is_destroyed:
-			body.take_damage(dmg, self )
+			body.take_damage(dmg, attacker)

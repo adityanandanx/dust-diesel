@@ -34,6 +34,8 @@ func _on_body_entered(body: Node3D) -> void:
 
 
 func _detonate(target: VehicleBody3D = null) -> void:
+	var valid_owner: Node = _get_valid_owner_car()
+
 	# Spawn explosion particles
 	if explosion_scene:
 		var fx: Node3D = explosion_scene.instantiate()
@@ -47,7 +49,7 @@ func _detonate(target: VehicleBody3D = null) -> void:
 	# Direct damage to trigger target
 	if target and target.has_node("DamageSystem"):
 		var dmg = target.get_node("DamageSystem")
-		dmg.take_damage(dmg.DamageZone.CHASSIS, damage)
+		dmg.take_damage(dmg.DamageZone.CHASSIS, damage, valid_owner)
 		# Knockback
 		var dir := (target.global_position - global_position).normalized()
 		target.apply_central_impulse(dir * knockback_force)
@@ -71,7 +73,8 @@ func _detonate(target: VehicleBody3D = null) -> void:
 			var falloff := 1.0 - clampf(dist / (detection_radius * 2.0), 0.0, 1.0)
 			body.get_node("DamageSystem").take_damage(
 				body.get_node("DamageSystem").DamageZone.CHASSIS,
-				damage * falloff * 0.5
+				damage * falloff * 0.5,
+				valid_owner
 			)
 			var push = (body.global_position - global_position).normalized()
 			body.apply_central_impulse(push * knockback_force * falloff * 0.5)
@@ -79,7 +82,7 @@ func _detonate(target: VehicleBody3D = null) -> void:
 			# Damage destructibles (like barrels) with splash
 			var dist := global_position.distance_to(body.global_position)
 			var falloff := 1.0 - clampf(dist / (detection_radius * 2.0), 0.0, 1.0)
-			body.take_damage(damage * falloff * 0.5)
+			body.take_damage(damage * falloff * 0.5, valid_owner)
 
 	# Chain reaction — detonate nearby mines
 	for r in results:
@@ -102,3 +105,13 @@ func _deferred_cleanup() -> void:
 	set_deferred("monitoring", false)
 	set_deferred("monitorable", false)
 	call_deferred("queue_free")
+
+
+func _get_valid_owner_car() -> Node:
+	if owner_car == null:
+		return null
+	if not is_instance_valid(owner_car):
+		return null
+	if owner_car.is_queued_for_deletion():
+		return null
+	return owner_car

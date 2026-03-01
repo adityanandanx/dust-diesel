@@ -28,20 +28,39 @@ var wheel_hp: Array[float] = [50.0, 50.0, 50.0, 50.0] # FL, FR, RL, RR
 var weapon_mount_hp: float = 60.0
 
 
-func take_damage(zone: DamageZone, amount: float) -> void:
+func take_damage(zone: DamageZone, amount: float, attacker: Node = null, attacker_session_id: String = "", attacker_name: String = "") -> void:
+	var attacker_identity: Dictionary = _resolve_attacker_identity(attacker)
+	if attacker_session_id == "":
+		attacker_session_id = str(attacker_identity.get("session_id", ""))
+	if attacker_name == "":
+		attacker_name = str(attacker_identity.get("name", ""))
+
 	if NakamaManager.current_match:
-		var car = get_parent()
+		var car = get_parent() as Car
+		if car == null:
+			return
 		var data = {
 			"target": car.network_id if car.network_id != "" else NakamaManager.current_match.self_user.session_id,
 			"zone": zone,
 			"amount": amount
 		}
+		if attacker_session_id != "":
+			data["attacker_session_id"] = attacker_session_id
+		if attacker_name != "":
+			data["attacker_name"] = attacker_name
 		NakamaManager.send_match_state(NakamaManager.OpCodes.DAMAGE_EVENT, JSON.stringify(data))
-	
-	_apply_damage_internal(zone, amount)
+
+	_apply_damage_internal(zone, amount, attacker, attacker_session_id, attacker_name)
 
 
-func _apply_damage_internal(zone: DamageZone, amount: float) -> void:
+func _apply_damage_internal(zone: DamageZone, amount: float, attacker: Node = null, attacker_session_id: String = "", attacker_name: String = "") -> void:
+	var car = get_parent() as Car
+	if car:
+		if attacker:
+			car.register_damage_attacker(attacker)
+		elif attacker_session_id != "" or attacker_name != "":
+			car.register_damage_attacker_info(attacker_session_id, attacker_name)
+
 	if amount > 0.0:
 		_show_damage_popup(amount)
 
@@ -63,8 +82,8 @@ func _apply_damage_internal(zone: DamageZone, amount: float) -> void:
 			zone_damaged.emit("weapon", weapon_mount_hp, max_weapon_hp)
 
 
-func take_collision_damage(impact_force: float) -> void:
-	take_damage(DamageZone.CHASSIS, impact_force * 0.1)
+func take_collision_damage(impact_force: float, attacker: Node = null, attacker_session_id: String = "", attacker_name: String = "") -> void:
+	take_damage(DamageZone.CHASSIS, impact_force * 0.1, attacker, attacker_session_id, attacker_name)
 
 
 ## 1.0 = full speed, 0.3 = critical engine damage
@@ -131,6 +150,23 @@ func get_zone_health(zone: String) -> Dictionary:
 	return {"current": 0.0, "max": 1.0}
 
 
+func _resolve_attacker_identity(attacker: Node) -> Dictionary:
+	if attacker == null:
+		return {}
+	if not is_instance_valid(attacker):
+		return {}
+	if not (attacker is Car):
+		return {}
+	var attacker_car: Car = attacker as Car
+	var session_id: String = attacker_car.network_id
+	if session_id == "" and NakamaManager.current_match and attacker_car.uses_player_input:
+		session_id = NakamaManager.current_match.self_user.session_id
+	return {
+		"session_id": session_id,
+		"name": attacker_car.name,
+	}
+
+
 func _show_damage_popup(amount: float) -> void:
 	if not show_damage_popup:
 		return
@@ -175,8 +211,8 @@ func _show_damage_popup(amount: float) -> void:
 	if not is_instance_valid(car) or car.is_queued_for_deletion() or not car.is_inside_tree():
 		return
 	var start_pos := car.global_position + Vector3(randf_range(-0.35, 0.35), popup_base_height, randf_range(-0.35, 0.35))
-	popup.global_position = start_pos
 	host.add_child(popup)
+	popup.global_position = start_pos
 
 	var tween: Tween = popup.create_tween()
 	tween.set_trans(Tween.TRANS_SINE)

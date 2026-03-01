@@ -46,7 +46,7 @@ func _physics_process(delta: float) -> void:
 func _apply_flame_damage(body: Node3D) -> void:
 	if body is VehicleBody3D and body.has_node("DamageSystem"):
 		var dmg_sys = body.get_node("DamageSystem")
-		dmg_sys.take_damage(dmg_sys.DamageZone.ENGINE, damage)
+		dmg_sys.take_damage(dmg_sys.DamageZone.ENGINE, damage, owner_car)
 		# Apply burning DoT via metadata
 		if body.has_method("apply_burning"):
 			body.apply_burning(damage, dot_duration)
