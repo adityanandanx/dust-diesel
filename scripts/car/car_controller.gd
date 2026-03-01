@@ -243,8 +243,6 @@ func _update_weapon_aim() -> void:
 
 	if primary_weapon:
 		primary_weapon.update_aim_target(_aim_point_world)
-	if secondary_weapon:
-		secondary_weapon.update_aim_target(_aim_point_world)
 
 
 func equip_weapon(weapon: WeaponBase) -> void:

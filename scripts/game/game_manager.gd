@@ -7,7 +7,7 @@ signal player_eliminated(player_name: String, killer_name: String)
 signal match_ended(winner_name: String)
 
 const WreckScene := preload("res://scenes/vehicles/CarWreck.tscn")
-const WeaponScene := preload("res://scenes/weapons/HarpoonLauncher.tscn")
+const WeaponScene := preload("res://scenes/weapons/RivetCannon.tscn")
 const WeaponScene2 := preload("res://scenes/weapons/EMPBlaster.tscn")
 const DefaultSpawnPointsScene := preload("res://scenes/game/SpawnPoints.tscn")
 
@@ -25,6 +25,7 @@ var WEAPON_SCENES: Array[PackedScene] = [
 @onready var cars_container: Node3D = $Cars
 @onready var wrecks_container: Node3D = $Wrecks
 @onready var hud: Control = $HUDLayer/HUD
+@onready var pause_menu: PauseMenu = $HUDLayer/PauseMenu
 @onready var top_down_camera: Camera3D = $TopDownCamera
 @onready var pickup_spawner: Node3D = $PickupSpawner
 
@@ -36,6 +37,9 @@ var _active_map_root: Node3D = null
 
 
 func _ready() -> void:
+	if pause_menu:
+		pause_menu.resume_requested.connect(_on_pause_resume_requested)
+		pause_menu.main_menu_requested.connect(_on_pause_main_menu_requested)
 	_load_selected_map()
 	if NakamaManager.current_match:
 		_spawn_networked_players()
@@ -345,6 +349,33 @@ func _get_live_connected_car(sess_id: String) -> Car:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		if NakamaManager.current_match:
-			NakamaManager.leave_match()
-		get_tree().change_scene_to_file("res://scenes/ui/MainMenu.tscn")
+		if get_tree().paused:
+			_on_pause_resume_requested()
+		else:
+			_open_pause_menu()
+
+
+func _open_pause_menu() -> void:
+	if pause_menu == null:
+		return
+	get_tree().paused = true
+	pause_menu.visible = true
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+
+func _on_pause_resume_requested() -> void:
+	get_tree().paused = false
+	if pause_menu:
+		pause_menu.visible = false
+	if top_down_camera and top_down_camera.get("mouse_capture_enabled"):
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+
+
+func _on_pause_main_menu_requested() -> void:
+	get_tree().paused = false
+	if pause_menu:
+		pause_menu.visible = false
+	if NakamaManager.current_match:
+		NakamaManager.leave_match()
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	get_tree().change_scene_to_file("res://scenes/ui/MainMenu.tscn")

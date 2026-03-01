@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bne32fudlx42w"]
 
 [ext_resource type="Script" uid="uid://drrm248plt7y6" path="res://scripts/weapons/emp_blaster.gd" id="1_emp"]
+[ext_resource type="PackedScene" uid="uid://dn34tt52q7s1x" path="res://assets/models/weapons/emp_blaster.blend" id="2_kixmi"]
 
 [sub_resource type="SphereMesh" id="SphereMesh_dish"]
 radius = 0.1
@@ -19,6 +20,8 @@ height = 2.0
 
 [node name="EMPBlaster" type="Node3D" unique_id=1760965934]
 script = ExtResource("1_emp")
+
+[node name="emp_blaster2" parent="." unique_id=1240690752 instance=ExtResource("2_kixmi")]
 
 [node name="Dish" type="MeshInstance3D" parent="." unique_id=2107096173]
 mesh = SubResource("SphereMesh_dish")

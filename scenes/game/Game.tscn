@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bmfmglaouyef1" path="res://scripts/game/game_manager.gd" id="1_gm"]
 [ext_resource type="PackedScene" uid="uid://cl3nsdq7vvkhf" path="res://scenes/ui/HUD.tscn" id="4_hud"]
+[ext_resource type="PackedScene" uid="uid://btxv6wntf10no" path="res://scenes/ui/PauseMenu.tscn" id="9_pause"]
 [ext_resource type="Script" uid="uid://cajyejhovrbpr" path="res://scripts/pickups/pickup_spawner.gd" id="5_spawner"]
 [ext_resource type="Script" uid="uid://b1w3l3qwuykxd" path="res://scripts/car/car_camera.gd" id="6_cam"]
 [ext_resource type="Script" uid="uid://8umksf8e80fw" path="res://addons/phantom_camera/scripts/resources/tween_resource.gd" id="7_gg4pt"]
@@ -21,6 +22,8 @@ script = ExtResource("1_gm")
 [node name="HUDLayer" type="CanvasLayer" parent="." unique_id=2013430588]
 
 [node name="HUD" parent="HUDLayer" unique_id=94024108 instance=ExtResource("4_hud")]
+
+[node name="PauseMenu" parent="HUDLayer" instance=ExtResource("9_pause")]
 
 [node name="PickupSpawner" type="Node3D" parent="." unique_id=2022638148]
 script = ExtResource("5_spawner")

@@ -1,23 +1,13 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3 uid="uid://f2am416kd4yu"]
 
-[ext_resource type="Script" path="res://scripts/weapons/rivet_cannon.gd" id="1_rc"]
+[ext_resource type="Script" uid="uid://bnaaionekl0x3" path="res://scripts/weapons/rivet_cannon.gd" id="1_rc"]
+[ext_resource type="PackedScene" uid="uid://d1tm5jdrcmhep" path="res://assets/models/weapons/rivet_cannon.blend" id="2_g8g3s"]
 
-[sub_resource type="BoxMesh" id="BoxMesh_barrel"]
-size = Vector3(0.15, 0.15, 1.2)
-
-[sub_resource type="StandardMaterial3D" id="Mat_rc"]
-albedo_color = Color(0.5, 0.5, 0.55, 1)
-metallic = 0.8
-
-[node name="RivetCannon" type="Node3D"]
+[node name="RivetCannon" type="Node3D" unique_id=108882934]
 script = ExtResource("1_rc")
+aim_yaw_node_path = NodePath("rivet_cannon")
+aim_pitch_node_path = NodePath("rivet_cannon/Turret")
 
-[node name="Barrel" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.6)
-mesh = SubResource("BoxMesh_barrel")
-surface_material_override/0 = SubResource("Mat_rc")
+[node name="rivet_cannon" parent="." unique_id=1973579424 instance=ExtResource("2_g8g3s")]
 
-[node name="Barrel2" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0, 0.6)
-mesh = SubResource("BoxMesh_barrel")
-surface_material_override/0 = SubResource("Mat_rc")
+[editable path="rivet_cannon"]

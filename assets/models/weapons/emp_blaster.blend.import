@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://dt4gnbfey3iu8"
-path="res://.godot/imported/harpoon_spear.blend-0eaef71210f792ba0c907d6ef71986a3.scn"
+uid="uid://dn34tt52q7s1x"
+path="res://.godot/imported/emp_blaster.blend-aa439ac50d9a504e5fd8c3157a5ecac3.scn"
 
 [deps]
 
-source_file="res://assets/models/weapons/harpoon_spear.blend"
-dest_files=["res://.godot/imported/harpoon_spear.blend-0eaef71210f792ba0c907d6ef71986a3.scn"]
+source_file="res://assets/models/weapons/emp_blaster.blend"
+dest_files=["res://.godot/imported/emp_blaster.blend-aa439ac50d9a504e5fd8c3157a5ecac3.scn"]
 
 [params]
 
