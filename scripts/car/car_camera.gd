@@ -22,6 +22,16 @@ const SHAKE_GROUP := "camera_shake_listener"
 @export var movement_yaw_full_blend_speed_kmh: float = 55.0
 @export var reverse_straight_lateral_deadzone_mps: float = 0.6
 
+@export_group("Mouse Look")
+@export var mouse_look_enabled: bool = true
+@export var mouse_capture_enabled: bool = true
+@export var mouse_sensitivity_x: float = 0.34
+@export var mouse_sensitivity_y: float = 0.24
+@export var mouse_look_response_speed: float = 24.0
+@export var mouse_pitch_min_deg: float = -70.0
+@export var mouse_pitch_max_deg: float = 38.0
+@export var mouse_yaw_limit_deg: float = 120.0
+
 @export_group("Shake")
 @export var shake_enabled: bool = true
 @export var shake_layer: int = 1
@@ -52,6 +62,8 @@ var _damage_hp_cache: Dictionary = {}
 var _recoil_pitch_offset_deg: float = 0.0
 var _glare_mesh_instance: MeshInstance3D = null
 var _light_source: DirectionalLight3D = null
+var _mouse_yaw_offset_deg: float = 0.0
+var _mouse_pitch_offset_deg: float = 0.0
 
 
 func _ready() -> void:
@@ -69,6 +81,8 @@ func _ready() -> void:
 	_configure_phantom_camera()
 	make_current()
 	set_physics_process(false)
+	set_process_input(false)
+	set_process_unhandled_input(false)
 
 func set_target(target: Node3D) -> void:
 	_unbind_target_signals(_target)
@@ -84,12 +98,22 @@ func set_target(target: Node3D) -> void:
 		_phantom_camera.set("priority", active_priority)
 		make_current()
 		_rotation_initialized = false
+		_mouse_yaw_offset_deg = 0.0
+		_mouse_pitch_offset_deg = 0.0
 		_bind_target_signals(_target)
 		set_physics_process(true)
+		set_process_input(mouse_look_enabled)
+		set_process_unhandled_input(mouse_look_enabled)
+		if mouse_look_enabled and mouse_capture_enabled:
+			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	else:
 		_phantom_camera.set("priority", 0)
 		_rotation_initialized = false
 		set_physics_process(false)
+		set_process_input(false)
+		set_process_unhandled_input(false)
+		if mouse_capture_enabled:
+			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 
 func _configure_phantom_camera() -> void:
@@ -201,14 +225,17 @@ func _physics_process(_delta: float) -> void:
 
 	var target_yaw_rad: float = _get_desired_yaw_rad()
 	_recoil_pitch_offset_deg = move_toward(_recoil_pitch_offset_deg, 0.0, recoil_pitch_return_speed * _delta)
-	var target_pitch_rad: float = deg_to_rad(chase_pitch_degrees + _recoil_pitch_offset_deg)
+	var target_pitch_rad: float = deg_to_rad(chase_pitch_degrees + _mouse_pitch_offset_deg + _recoil_pitch_offset_deg)
 
 	if not _rotation_initialized:
 		_current_yaw_rad = target_yaw_rad
 		_current_pitch_rad = target_pitch_rad
 		_rotation_initialized = true
 
-	var blend_t: float = clampf(rotation_smoothing_speed * _delta, 0.0, 1.0)
+	var response_speed: float = rotation_smoothing_speed
+	if mouse_look_enabled:
+		response_speed = maxf(response_speed, mouse_look_response_speed)
+	var blend_t: float = clampf(response_speed * _delta, 0.0, 1.0)
 	_current_yaw_rad = lerp_angle(_current_yaw_rad, target_yaw_rad, blend_t)
 	_current_pitch_rad = lerpf(_current_pitch_rad, target_pitch_rad, blend_t)
 
@@ -305,7 +332,30 @@ func _get_desired_yaw_rad() -> float:
 	if not reverse_straight:
 		move_blend = clampf(influence_t * movement_yaw_influence, 0.0, 1.0)
 	var base_yaw_rad: float = lerp_angle(heading_yaw_rad, movement_yaw_rad, move_blend)
-	return base_yaw_rad + deg_to_rad(chase_yaw_offset_degrees)
+	return base_yaw_rad + deg_to_rad(chase_yaw_offset_degrees + _mouse_yaw_offset_deg)
+
+
+func _input(event: InputEvent) -> void:
+	if not mouse_look_enabled:
+		return
+	if _target == null:
+		return
+	if not (event is InputEventMouseMotion):
+		return
+
+	var motion: InputEventMouseMotion = event as InputEventMouseMotion
+	_mouse_yaw_offset_deg -= motion.relative.x * mouse_sensitivity_x
+	_mouse_yaw_offset_deg = clampf(_mouse_yaw_offset_deg, -mouse_yaw_limit_deg, mouse_yaw_limit_deg)
+	_mouse_pitch_offset_deg = clampf(
+		_mouse_pitch_offset_deg - motion.relative.y * mouse_sensitivity_y,
+		mouse_pitch_min_deg,
+		mouse_pitch_max_deg
+	)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	# Keep fallback path for projects that route motion to unhandled input.
+	_input(event)
 
 
 func _on_zone_damaged(zone: String, current_hp: float, max_hp: float) -> void:
@@ -362,3 +412,8 @@ func camera_shake_explosion(world_position: Vector3, strength_scale: float = 1.0
 	var falloff: float = pow(normalized, explosion_distance_falloff)
 	var strength: float = maxf(strength_scale, 0.25) * falloff
 	_emit_shake(1.2 + strength * 3.0, 7.5 + strength * 3.0, 0.16 + strength * 0.12, 0.0, 0.25 + strength * 0.2)
+
+
+func _exit_tree() -> void:
+	if mouse_capture_enabled:
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)

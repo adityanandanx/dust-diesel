@@ -26,8 +26,8 @@ func _do_fire() -> void:
 		return
 	var chunk: CharacterBody3D = ScrapChunkScene.instantiate()
 	get_tree().current_scene.add_child(chunk)
-	chunk.global_position = global_position
-	var forward = owner_car.global_basis.z.normalized()
+	chunk.global_position = get_muzzle_position(2.6, 0.2)
+	var forward: Vector3 = get_muzzle_direction()
 	chunk.launch(forward, owner_car)
 	chunk.speed = chunk_speed
 	chunk.damage = chunk_damage

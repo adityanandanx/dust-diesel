@@ -70,11 +70,13 @@ var _minimap_env_applied: bool = false
 var _part_textures: Dictionary = {}
 var _weapon_textures: Dictionary = {}
 var _powerup_textures: Dictionary = {}
+var _crosshair_root: Control = null
 
 
 func _ready() -> void:
 	add_to_group("hud_log_feed")
 	_ensure_debug_overlay_label()
+	_ensure_crosshair()
 	_set_debug_overlay_visible(debug_overlay_enabled)
 	_build_placeholder_textures()
 	_apply_static_placeholder_textures()
@@ -184,6 +186,63 @@ func _setup_minimap_view() -> void:
 		minimap_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 		minimap_camera.size = minimap_world_radius * 2.0
 		_ensure_minimap_environment()
+
+
+func _ensure_crosshair() -> void:
+	if _crosshair_root and is_instance_valid(_crosshair_root):
+		return
+
+	var root := Control.new()
+	root.name = "Crosshair"
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.set_anchors_preset(Control.PRESET_CENTER)
+	root.position = Vector2.ZERO
+	root.size = Vector2(32.0, 32.0)
+	root.pivot_offset = root.size * 0.5
+	add_child(root)
+
+	# Four ticks + center dot to keep the target clear on bright scenes.
+	var col: Color = Color(1.0, 0.9, 0.65, 0.95)
+	var thickness: float = 2.0
+	var tick_len: float = 6.0
+	var gap: float = 4.0
+
+	var top := ColorRect.new()
+	top.color = col
+	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	top.position = Vector2(16.0 - thickness * 0.5, 16.0 - gap - tick_len)
+	top.size = Vector2(thickness, tick_len)
+	root.add_child(top)
+
+	var bottom := ColorRect.new()
+	bottom.color = col
+	bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bottom.position = Vector2(16.0 - thickness * 0.5, 16.0 + gap)
+	bottom.size = Vector2(thickness, tick_len)
+	root.add_child(bottom)
+
+	var left := ColorRect.new()
+	left.color = col
+	left.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	left.position = Vector2(16.0 - gap - tick_len, 16.0 - thickness * 0.5)
+	left.size = Vector2(tick_len, thickness)
+	root.add_child(left)
+
+	var right := ColorRect.new()
+	right.color = col
+	right.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	right.position = Vector2(16.0 + gap, 16.0 - thickness * 0.5)
+	right.size = Vector2(tick_len, thickness)
+	root.add_child(right)
+
+	var dot := ColorRect.new()
+	dot.color = Color(1.0, 0.98, 0.9, 0.95)
+	dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dot.position = Vector2(15.0, 15.0)
+	dot.size = Vector2(2.0, 2.0)
+	root.add_child(dot)
+
+	_crosshair_root = root
 
 
 func _ensure_minimap_environment() -> void:

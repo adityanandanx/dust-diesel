@@ -28,14 +28,21 @@ func _do_fire() -> void:
 		return
 	var bolt: CharacterBody3D = RivetBoltScene.instantiate()
 	get_tree().current_scene.add_child(bolt)
-	# Spawn ahead of car to avoid self-collision
-	var forward = owner_car.global_basis.z.normalized()
-	bolt.global_position = owner_car.global_position + forward * 3.0 + Vector3.UP * 0.5
-	var spread := Vector3(
-		randf_range(-spread_angle, spread_angle),
-		0,
-		randf_range(-spread_angle, spread_angle)
-	)
-	bolt.launch(forward + spread, owner_car)
+	var forward: Vector3 = get_muzzle_direction()
+	bolt.global_position = get_muzzle_position(2.8, 0.2)
+
+	var right: Vector3 = forward.cross(Vector3.UP)
+	if right.length_squared() <= 0.0001:
+		right = Vector3.RIGHT
+	else:
+		right = right.normalized()
+	var up: Vector3 = right.cross(forward).normalized()
+	var spread_dir: Vector3 = (
+		forward
+		+ right * randf_range(-spread_angle, spread_angle)
+		+ up * randf_range(-spread_angle, spread_angle)
+	).normalized()
+
+	bolt.launch(spread_dir, owner_car)
 	bolt.speed = bolt_speed
 	bolt.damage = bolt_damage

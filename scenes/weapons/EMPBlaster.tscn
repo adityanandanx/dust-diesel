@@ -3,12 +3,8 @@
 [ext_resource type="Script" uid="uid://drrm248plt7y6" path="res://scripts/weapons/emp_blaster.gd" id="1_emp"]
 
 [sub_resource type="SphereMesh" id="SphereMesh_dish"]
-radius = 0.8
-height = 0.3
-
-[sub_resource type="SphereMesh" id="SphereMesh_impact_zone"]
-radius = 1.0
-height = 2.0
+radius = 0.1
+height = 0.1
 
 [sub_resource type="StandardMaterial3D" id="Mat_emp"]
 albedo_color = Color(0.2, 0.4, 0.9, 1)
@@ -17,15 +13,18 @@ emission_enabled = true
 emission = Color(0.1, 0.3, 0.8, 1)
 emission_energy_multiplier = 0.5
 
+[sub_resource type="SphereMesh" id="SphereMesh_impact_zone"]
+radius = 1.0
+height = 2.0
+
 [node name="EMPBlaster" type="Node3D" unique_id=1760965934]
 script = ExtResource("1_emp")
 
 [node name="Dish" type="MeshInstance3D" parent="." unique_id=2107096173]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.4)
 mesh = SubResource("SphereMesh_dish")
 surface_material_override/0 = SubResource("Mat_emp")
 
 [node name="ImpactZoneSphere" type="MeshInstance3D" parent="." unique_id=327560114]
-mesh = SubResource("SphereMesh_impact_zone")
-cast_shadow = 0
 visible = false
+cast_shadow = 0
+mesh = SubResource("SphereMesh_impact_zone")

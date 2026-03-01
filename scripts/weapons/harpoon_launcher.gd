@@ -19,6 +19,8 @@ const HarpoonSpearScene: PackedScene = preload("res://scenes/weapons/HarpoonSpea
 @export var chain_segments: int = 14
 @export var chain_sag: float = 0.06
 
+@onready var rope_origin: Node3D = get_node_or_null("RopeOrigin")
+
 var tether_timer: float = 0.0
 var _tethered_target: Node3D = null
 var _tether_anchor_local: Vector3 = Vector3.ZERO
@@ -67,9 +69,8 @@ func _do_fire() -> void:
 	if spear == null:
 		return
 	get_tree().current_scene.add_child(spear)
-	# Spawn slightly ahead of the car to avoid self-collision
-	var forward: Vector3 = owner_car.global_basis.z.normalized()
-	spear.global_position = owner_car.global_position + forward * 3.0 + Vector3.UP * 0.5
+	var forward: Vector3 = get_muzzle_direction()
+	spear.global_position = get_muzzle_position(3.0, 0.2)
 	if spear.has_method("launch"):
 		spear.launch(forward, owner_car)
 	spear.set("speed", spear_speed)
@@ -77,6 +78,7 @@ func _do_fire() -> void:
 	if spear.has_signal("stuck"):
 		spear.stuck.connect(_on_spear_stuck)
 	_active_spear = spear
+	_tether_line.visible = true
 
 
 func _physics_process(delta: float) -> void:
@@ -99,6 +101,8 @@ func _physics_process(delta: float) -> void:
 
 	if _active_spear and not is_instance_valid(_active_spear):
 		_active_spear = null
+		if not (_tethered_target and is_instance_valid(_tethered_target)):
+			_tether_line.visible = false
 
 	var harpoon_active: bool = (_tethered_target and is_instance_valid(_tethered_target)) or (_active_spear and is_instance_valid(_active_spear))
 	if trigger_held and harpoon_active:
@@ -151,6 +155,9 @@ func _physics_process(delta: float) -> void:
 				return
 		else:
 			tether_timer = maxf(tether_timer - delta * 1.5, 0.0)
+	elif _active_spear and is_instance_valid(_active_spear):
+		# Keep rope visible during spear flight before it attaches.
+		_draw_tether_line(_active_spear.global_position)
 	elif _tethered_target:
 		_break_tether()
 
@@ -191,7 +198,11 @@ func _draw_tether_line(anchor_world: Vector3) -> void:
 	if not _tether_mesh or not owner_car:
 		return
 
-	var start: Vector3 = owner_car.global_position + Vector3.UP * 0.55
+	var start: Vector3
+	if rope_origin and is_instance_valid(rope_origin):
+		start = rope_origin.global_position
+	else:
+		start = owner_car.global_position + Vector3.UP * 0.55
 	var end: Vector3 = anchor_world
 	var distance: float = start.distance_to(end)
 	var sag_amount: float = distance * chain_sag

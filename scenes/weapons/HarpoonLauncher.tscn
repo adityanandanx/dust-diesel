@@ -1,27 +1,16 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene format=3 uid="uid://b2illmdx4v600"]
 
-[ext_resource type="Script" path="res://scripts/weapons/harpoon_launcher.gd" id="1_hl"]
+[ext_resource type="Script" uid="uid://ckchsybyv1fnm" path="res://scripts/weapons/harpoon_launcher.gd" id="1_hl"]
+[ext_resource type="PackedScene" uid="uid://cajd6aukxtx8x" path="res://assets/models/weapons/harpoon.blend" id="2_so5t1"]
 
-[sub_resource type="CylinderMesh" id="CylMesh_tube"]
-top_radius = 0.12
-bottom_radius = 0.15
-height = 1.4
-
-[sub_resource type="BoxMesh" id="BoxMesh_mount"]
-size = Vector3(0.35, 0.25, 0.3)
-
-[sub_resource type="StandardMaterial3D" id="Mat_hl"]
-albedo_color = Color(0.3, 0.4, 0.35, 1)
-metallic = 0.7
-
-[node name="HarpoonLauncher" type="Node3D"]
+[node name="HarpoonLauncher" type="Node3D" unique_id=2085900769]
 script = ExtResource("1_hl")
+aim_yaw_node_path = NodePath("harpoon")
+aim_pitch_node_path = NodePath("harpoon/Circle_002")
 
-[node name="Mount" type="MeshInstance3D" parent="."]
-mesh = SubResource("BoxMesh_mount")
-surface_material_override/0 = SubResource("Mat_hl")
+[node name="harpoon" parent="." unique_id=238712482 instance=ExtResource("2_so5t1")]
 
-[node name="Tube" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0.05, 0.7)
-mesh = SubResource("CylMesh_tube")
-surface_material_override/0 = SubResource("Mat_hl")
+[node name="RopeOrigin" type="Marker3D" parent="." unique_id=913744221]
+transform = Transform3D(1, 0, 0, 0, 0.99999994, 0, 0, 0, 0.99999994, 0, 0.38029274, 0.4253245)
+
+[editable path="harpoon"]

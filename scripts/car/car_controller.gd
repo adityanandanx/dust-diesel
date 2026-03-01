@@ -37,6 +37,11 @@ signal powerup_ended(powerup_id: String)
 @export var emp_fx_random_scale: float = 4.6
 @export var emp_fx_speed: float = 5.1
 
+@export_group("Weapon Aim")
+@export var mouse_aim_enabled: bool = true
+@export var mouse_aim_distance: float = 450.0
+@export var mouse_aim_collision_mask: int = 0xFFFFFFFF
+
 # ---------- State ----------
 var boost_meter: float = 0.0
 var is_boosting: bool = false
@@ -53,6 +58,7 @@ var active_powerups: Dictionary = {} # String -> {duration: float, remaining: fl
 var _emp_fx_active: bool = false
 var _emp_meshes: Array[MeshInstance3D] = []
 var _emp_original_overlays: Dictionary = {}
+var _aim_point_world: Vector3 = Vector3.ZERO
 
 # ---------- Weapons ----------
 var primary_weapon: WeaponBase = null
@@ -111,6 +117,7 @@ func _physics_process(delta: float) -> void:
 	_handle_steering(delta)
 	_handle_acceleration(delta)
 	_handle_boost(delta)
+	_update_weapon_aim()
 	_handle_weapons()
 
 
@@ -206,6 +213,40 @@ func _handle_weapons() -> void:
 		weapon_fired.emit(WeaponBase.MountType.SECONDARY, _weapon_recoil_intensity(secondary_weapon))
 
 
+func _update_weapon_aim() -> void:
+	if not is_player or not mouse_aim_enabled:
+		return
+
+	var camera: Camera3D = get_viewport().get_camera_3d()
+	if camera == null:
+		return
+
+	var mouse_pos: Vector2
+	if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
+		mouse_pos = get_viewport().get_visible_rect().size * 0.5
+	else:
+		mouse_pos = get_viewport().get_mouse_position()
+
+	var ray_origin: Vector3 = camera.project_ray_origin(mouse_pos)
+	var ray_dir: Vector3 = camera.project_ray_normal(mouse_pos).normalized()
+	var ray_end: Vector3 = ray_origin + ray_dir * mouse_aim_distance
+
+	var query := PhysicsRayQueryParameters3D.create(ray_origin, ray_end)
+	query.exclude = [ self.get_rid()]
+	query.collision_mask = mouse_aim_collision_mask
+	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+
+	if hit.is_empty():
+		_aim_point_world = ray_end
+	else:
+		_aim_point_world = hit.get("position", ray_end)
+
+	if primary_weapon:
+		primary_weapon.update_aim_target(_aim_point_world)
+	if secondary_weapon:
+		secondary_weapon.update_aim_target(_aim_point_world)
+
+
 func equip_weapon(weapon: WeaponBase) -> void:
 	# Ensure the weapon enters the tree so subclasses that set mount_type in _ready() are initialized.
 	weapon.owner_car = self
@@ -219,12 +260,16 @@ func equip_weapon(weapon: WeaponBase) -> void:
 		primary_weapon = weapon
 		if primary_weapon.get_parent() != weapon_mount_primary:
 			primary_weapon.reparent(weapon_mount_primary)
+		# Snap weapon exactly to mount transform.
+		primary_weapon.transform = Transform3D.IDENTITY
 	else:
 		if secondary_weapon and secondary_weapon != weapon:
 			drop_weapon(WeaponBase.MountType.SECONDARY)
 		secondary_weapon = weapon
 		if secondary_weapon.get_parent() != weapon_mount_secondary:
 			secondary_weapon.reparent(weapon_mount_secondary)
+		# Snap weapon exactly to mount transform.
+		secondary_weapon.transform = Transform3D.IDENTITY
 
 
 func drop_weapon(slot: WeaponBase.MountType) -> void:

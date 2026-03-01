@@ -38,8 +38,8 @@ func _do_fire() -> void:
 	if _smoke_particles:
 		_smoke_particles.emitting = true
 	# Cone damage check — find all cars in range and angle
-	var origin := global_position
-	var forward: Vector3 = owner_car.global_basis.z.normalized()
+	var origin: Vector3 = get_muzzle_position()
+	var forward: Vector3 = get_muzzle_direction()
 
 	for body in _get_bodies_in_range(origin, cone_range):
 		if body == owner_car:

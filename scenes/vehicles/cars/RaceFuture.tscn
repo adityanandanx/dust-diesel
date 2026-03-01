@@ -32,7 +32,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.44782102, 0.3, -0.8801137)
 use_as_steering = false
 wheel_radius = 0.3
 
-[node name="WeaponMount" parent="." index="8" unique_id=475629504]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.26206523, 0.5696807)
+[node name="WeaponMountPrimary" parent="." index="8" unique_id=475629504]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.51651245, 0.5696807)
+
+[node name="WeaponMountSecondary" parent="." index="9" unique_id=376377253]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.32787734, -1.3294103)
 
 [node name="Visuals" parent="." index="12" unique_id=19584404 instance=ExtResource("2_model")]

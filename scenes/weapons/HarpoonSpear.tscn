@@ -1,26 +1,20 @@
 [gd_scene format=3 uid="uid://d2fv7axrxqnqb"]
 
-[ext_resource type="Script" path="res://scripts/weapons/harpoon_spear.gd" id="1_harpoon"]
+[ext_resource type="Script" uid="uid://bdy3qoli6o3l7" path="res://scripts/weapons/harpoon_spear.gd" id="1_harpoon"]
+[ext_resource type="PackedScene" uid="uid://dt4gnbfey3iu8" path="res://assets/models/weapons/harpoon_spear.blend" id="2_fj1kf"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_spear"]
 radius = 0.08
-height = 1.0
-
-[sub_resource type="CylinderMesh" id="CylMesh_spear"]
-top_radius = 0.05
-bottom_radius = 0.08
 height = 1.0
 
 [node name="HarpoonSpear" type="CharacterBody3D" unique_id=1146178399]
 collision_layer = 4
 collision_mask = 3
 script = ExtResource("1_harpoon")
-speed = 50.0
-damage = 15.0
-lifetime = 6.0
+
+[node name="harpoon_spear" parent="." unique_id=773207969 instance=ExtResource("2_fj1kf")]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0, 0, -0.6401377)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=516297434]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, -0.2401377)
 shape = SubResource("CapsuleShape3D_spear")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=743014892]
-mesh = SubResource("CylMesh_spear")
