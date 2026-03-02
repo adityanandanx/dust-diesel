@@ -38,6 +38,7 @@ func _register_maps() -> void:
 		# id, display name, scene path
 		["boneyard", "Boneyard", "res://scenes/game/Boneyard.tscn"],
 		["city_raceway", "City Raceway", "res://scenes/game/CityRaceway.tscn"],
+		["sphere", "Sphere", "res://scenes/game/Sphere.tscn"],
 	]
 
 	for d in defs:

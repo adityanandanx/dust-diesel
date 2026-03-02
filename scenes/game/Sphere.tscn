@@ -1,0 +1,64 @@
+[gd_scene format=3 uid="uid://uq0vvxmjg076"]
+
+[ext_resource type="PackedScene" uid="uid://6l4aw6t1xanb" path="res://assets/models/maps/sphere-src.blend" id="1_eb1mw"]
+
+[sub_resource type="Curve" id="Curve_e3cqr"]
+_data = [Vector2(0, 0), 0.0, 0.37270525, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_0f0k3"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_i5vjl"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(1, 1), 2.251204, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveXYZTexture" id="CurveXYZTexture_m1aal"]
+curve_x = SubResource("Curve_e3cqr")
+curve_y = SubResource("Curve_0f0k3")
+curve_z = SubResource("Curve_i5vjl")
+
+[sub_resource type="ProceduralSkyMaterial" id="1"]
+sky_top_color = Color(0.32, 0.41, 0.55, 1)
+sky_horizon_color = Color(0.95, 0.95, 0.95, 1)
+ground_horizon_color = Color(0.3, 0.33, 0.35, 1)
+
+[sub_resource type="Sky" id="2"]
+sky_material = SubResource("1")
+
+[sub_resource type="Environment" id="3"]
+background_mode = 2
+sky = SubResource("2")
+glow_enabled = true
+glow_bloom = 1.0
+fog_mode = 1
+fog_light_energy = 0.1
+fog_density = 1.0
+adjustment_enabled = true
+adjustment_contrast = 1.25
+adjustment_color_correction = SubResource("CurveXYZTexture_m1aal")
+
+[node name="CityRaceway" type="Node3D" unique_id=1021283232]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1708125207]
+transform = Transform3D(0.830928, -0.37222862, 0.41352686, 0, 0.7432455, 0.6690188, -0.5563799, -0.5559065, 0.6175835, 0, 40, 0)
+light_color = Color(1, 0.95, 0.86, 1)
+light_energy = 1.25
+shadow_enabled = true
+metadata/_edit_lock_ = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=973060433]
+environment = SubResource("3")
+
+[node name="SpawnPoints" type="Node3D" parent="." unique_id=511165724]
+
+[node name="Spawn1" type="Marker3D" parent="SpawnPoints" unique_id=380229545]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 18.528591, 0)
+
+[node name="PickupPoints" type="Node3D" parent="." unique_id=408814125]
+
+[node name="P1" type="Marker3D" parent="PickupPoints" unique_id=133418312]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -101, 0.5, -56)
+
+[node name="sphere-src" parent="." unique_id=1367502974 instance=ExtResource("1_eb1mw")]
