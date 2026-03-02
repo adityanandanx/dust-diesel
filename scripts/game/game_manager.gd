@@ -46,6 +46,9 @@ var _match_timer_running: bool = false
 var _match_has_ended: bool = false
 var _round_restart_in_progress: bool = false
 var _waiting_for_host_restart: bool = false
+var _processed_damage_event_ids: Dictionary = {}
+var _respawn_seq_by_session: Dictionary = {}
+var _applied_respawn_events: Dictionary = {}
 
 
 func _is_multiplayer_session() -> bool:
@@ -201,6 +204,9 @@ func _on_remote_match_state(match_state: NakamaRTAPI.MatchData) -> void:
 		var data: Dictionary = JSON.parse_string(match_state.data)
 		if data == null or not "target" in data:
 			return
+		var event_id: String = str(data.get("event_id", ""))
+		if not _should_apply_damage_event(event_id):
+			return
 			
 		var target_id: String = str(data["target"])
 		var attacker_session_id: String = str(data.get("attacker_session_id", ""))
@@ -214,6 +220,12 @@ func _on_remote_match_state(match_state: NakamaRTAPI.MatchData) -> void:
 		if car and car.has_node("DamageSystem"):
 			car.get_node("DamageSystem")._apply_damage_internal(
 				int(data["zone"]), float(data["amount"]), null, attacker_session_id, attacker_name)
+
+	elif match_state.op_code == NakamaManager.OpCodes.PLAYER_RESPAWN:
+		var data: Dictionary = JSON.parse_string(match_state.data)
+		if data == null or not "session_id" in data:
+			return
+		_on_player_respawn_event(data)
 				
 	elif match_state.op_code == NakamaManager.OpCodes.ENV_DAMAGE:
 		var data: Dictionary = JSON.parse_string(match_state.data)
@@ -299,11 +311,8 @@ func _on_network_player_joined(sess_id: String, _user_id: String, _username: Str
 	cars_container.add_child(car)
 
 	var spawn_transform: Transform3D = Transform3D.IDENTITY
-	if spawn_points and spawn_points.get_child_count() > 0:
-		var idx: int = randi() % spawn_points.get_child_count()
-		var marker: Node3D = spawn_points.get_child(idx) as Node3D
-		if marker:
-			spawn_transform = marker.global_transform
+	var spawn_index: int = _get_spawn_index_for_session(sess_id)
+	spawn_transform = _get_spawn_transform_for_index(spawn_index)
 	car.global_transform = spawn_transform
 
 	car.car_destroyed.connect(_on_car_destroyed)
@@ -472,7 +481,7 @@ func _eliminate_car(car: Car, cause: String, killer_session_id: String = "", kil
 	if car.network_id != "":
 		connected_cars.erase(car.network_id)
 
-	if respawn_enabled:
+	if respawn_enabled and cause != "disconnected":
 		_schedule_respawn(respawn_snapshot)
 		return
 
@@ -533,13 +542,13 @@ func _resolve_winner_from_kills() -> String:
 	for key_variant in player_kills.keys():
 		var key: String = str(key_variant)
 		var kills: int = int(player_kills.get(key, 0))
-		var name: String = str(player_kill_names.get(key, key))
+		var player_name: String = str(player_kill_names.get(key, key))
 		if kills > best_kills:
 			best_kills = kills
 			leaders.clear()
-			leaders.append(name)
+			leaders.append(player_name)
 		elif kills == best_kills:
-			leaders.append(name)
+			leaders.append(player_name)
 
 	if leaders.is_empty():
 		return "Nobody"
@@ -715,14 +724,14 @@ func _resolve_recent_killer_info(victim: Car) -> Dictionary:
 		return {}
 	var info: Dictionary = victim.get_recent_attacker_info()
 	var session_id: String = str(info.get("session_id", ""))
-	var name: String = str(info.get("name", ""))
-	if session_id == "" and name == "":
+	var attacker_name: String = str(info.get("name", ""))
+	if session_id == "" and attacker_name == "":
 		return {}
-	if name == "" and session_id != "":
-		name = _resolve_player_name_from_session(session_id)
+	if attacker_name == "" and session_id != "":
+		attacker_name = _resolve_player_name_from_session(session_id)
 	return {
 		"session_id": session_id,
-		"name": name,
+		"name": attacker_name,
 	}
 
 
@@ -811,14 +820,16 @@ func _build_respawn_snapshot(car: Car) -> Dictionary:
 func _schedule_respawn(snapshot: Dictionary) -> void:
 	if _match_has_ended:
 		return
-	var seq: int = -1
+	if not _can_schedule_local_respawn(snapshot):
+		return
+	var session_id: String = str(snapshot.get("network_id", ""))
+	var seq: int = _next_respawn_seq_for_session(session_id)
 	if bool(snapshot.get("uses_player_input", false)):
-		_local_respawn_seq += 1
-		seq = _local_respawn_seq
+		_local_respawn_seq = seq
 	_respawn_after_delay(snapshot, seq)
 
 
-func _respawn_after_delay(snapshot: Dictionary, local_seq: int) -> void:
+func _respawn_after_delay(snapshot: Dictionary, respawn_seq: int) -> void:
 	if _match_has_ended:
 		return
 	var local_player_respawn: bool = bool(snapshot.get("uses_player_input", false))
@@ -827,7 +838,7 @@ func _respawn_after_delay(snapshot: Dictionary, local_seq: int) -> void:
 	while countdown > 0:
 		if _match_has_ended:
 			return
-		if local_player_respawn and local_seq == _local_respawn_seq and hud and hud.has_method("show_respawn_countdown"):
+		if local_player_respawn and respawn_seq == _local_respawn_seq and hud and hud.has_method("show_respawn_countdown"):
 			hud.show_respawn_countdown(countdown)
 		await get_tree().create_timer(1.0).timeout
 		countdown -= 1
@@ -837,16 +848,52 @@ func _respawn_after_delay(snapshot: Dictionary, local_seq: int) -> void:
 	if _match_has_ended:
 		return
 
-	if local_player_respawn and local_seq == _local_respawn_seq and hud and hud.has_method("hide_respawn_countdown"):
+	if local_player_respawn and respawn_seq == _local_respawn_seq and hud and hud.has_method("hide_respawn_countdown"):
 		hud.hide_respawn_countdown()
 
-	_respawn_car(snapshot)
+	_announce_and_apply_respawn(snapshot, respawn_seq)
+
+
+func _announce_and_apply_respawn(snapshot: Dictionary, respawn_seq: int) -> void:
+	var session_id: String = str(snapshot.get("network_id", ""))
+	var payload := {
+		"session_id": session_id,
+		"vehicle_id": str(snapshot.get("vehicle_data_id", "sedan")),
+		"name": str(snapshot.get("name", "Unknown")),
+		"is_player": bool(snapshot.get("is_player", false)),
+		"uses_player_input": bool(snapshot.get("uses_player_input", false)),
+		"is_bot": bool(snapshot.get("is_bot", false)),
+		"respawn_seq": respawn_seq,
+		"spawn_index": _get_respawn_spawn_index(session_id, respawn_seq),
+	}
+	_on_player_respawn_event(payload)
+	if NakamaManager.current_match:
+		NakamaManager.send_match_state(NakamaManager.OpCodes.PLAYER_RESPAWN, JSON.stringify(payload))
+
+
+func _on_player_respawn_event(payload: Dictionary) -> void:
+	var session_id: String = str(payload.get("session_id", ""))
+	var respawn_seq: int = int(payload.get("respawn_seq", -1))
+	if session_id == "" or respawn_seq < 0:
+		return
+	var event_key: String = "%s:%d" % [session_id, respawn_seq]
+	if _applied_respawn_events.has(event_key):
+		return
+	_applied_respawn_events[event_key] = Time.get_ticks_msec()
+
+	var existing: Car = _get_live_connected_car(session_id)
+	if existing:
+		return
+
+	_respawn_car(payload)
 
 
 func _respawn_car(snapshot: Dictionary) -> void:
 	if _match_has_ended:
 		return
-	var vehicle_id: String = str(snapshot.get("vehicle_data_id", "sedan"))
+	var vehicle_id: String = str(snapshot.get("vehicle_id", "sedan"))
+	if vehicle_id == "":
+		vehicle_id = str(snapshot.get("vehicle_data_id", "sedan"))
 	var vehicle_data: Variant = VehicleRegistry.get_by_id(vehicle_id)
 	var scene_path: String = ""
 	if vehicle_data != null and "scene_path" in vehicle_data:
@@ -870,11 +917,16 @@ func _respawn_car(snapshot: Dictionary) -> void:
 	car.is_player = bool(snapshot.get("is_player", false))
 	car.uses_player_input = bool(snapshot.get("uses_player_input", false))
 	car.is_bot = bool(snapshot.get("is_bot", false))
-	car.network_id = str(snapshot.get("network_id", ""))
+	car.network_id = str(snapshot.get("session_id", ""))
+	if car.network_id == "":
+		car.network_id = str(snapshot.get("network_id", ""))
 	car.name = str(snapshot.get("name", "Unknown"))
 
 	cars_container.add_child(car)
-	car.global_transform = _pick_respawn_transform()
+	var spawn_index: int = int(snapshot.get("spawn_index", -1))
+	if spawn_index < 0:
+		spawn_index = _get_respawn_spawn_index(car.network_id, int(snapshot.get("respawn_seq", 0)))
+	car.global_transform = _get_spawn_transform_for_index(spawn_index)
 
 	car.car_destroyed.connect(_on_car_destroyed)
 	car.car_stalled.connect(_on_car_stalled)
@@ -897,12 +949,67 @@ func _respawn_car(snapshot: Dictionary) -> void:
 
 
 func _pick_respawn_transform() -> Transform3D:
+	return _get_spawn_transform_for_index(_get_respawn_spawn_index("", 0))
+
+
+func _get_spawn_transform_for_index(index: int) -> Transform3D:
 	if spawn_points and spawn_points.get_child_count() > 0:
-		var idx: int = randi() % spawn_points.get_child_count()
-		var marker: Node3D = spawn_points.get_child(idx) as Node3D
+		var safe_index: int = posmod(index, spawn_points.get_child_count())
+		var marker: Node3D = spawn_points.get_child(safe_index) as Node3D
 		if marker:
 			return marker.global_transform
 	return Transform3D.IDENTITY
+
+
+func _get_spawn_index_for_session(session_id: String) -> int:
+	if spawn_points == null or spawn_points.get_child_count() <= 0:
+		return 0
+	var session_ids: Array = NakamaManager.connected_players.keys()
+	session_ids.sort()
+	var session_pos: int = session_ids.find(session_id)
+	if session_pos >= 0:
+		return session_pos % spawn_points.get_child_count()
+	if session_id == "":
+		return 0
+	return absi(hash(session_id)) % spawn_points.get_child_count()
+
+
+func _get_respawn_spawn_index(session_id: String, respawn_seq: int) -> int:
+	if spawn_points == null or spawn_points.get_child_count() <= 0:
+		return 0
+	var key: String = "%s:%d" % [session_id, respawn_seq]
+	return absi(hash(key)) % spawn_points.get_child_count()
+
+
+func _can_schedule_local_respawn(snapshot: Dictionary) -> bool:
+	if not NakamaManager.current_match:
+		return true
+	if bool(snapshot.get("uses_player_input", false)):
+		return true
+	if bool(snapshot.get("is_bot", false)) and NakamaManager.is_host:
+		return true
+	return false
+
+
+func _next_respawn_seq_for_session(session_id: String) -> int:
+	var key: String = session_id if session_id != "" else "local"
+	var next_seq: int = int(_respawn_seq_by_session.get(key, 0)) + 1
+	_respawn_seq_by_session[key] = next_seq
+	return next_seq
+
+
+func _should_apply_damage_event(event_id: String) -> bool:
+	if event_id == "":
+		return true
+	if _processed_damage_event_ids.has(event_id):
+		return false
+	_processed_damage_event_ids[event_id] = Time.get_ticks_msec()
+	if _processed_damage_event_ids.size() > 512:
+		var now_ms: int = Time.get_ticks_msec()
+		for key in _processed_damage_event_ids.keys():
+			if now_ms - int(_processed_damage_event_ids[key]) > 15000:
+				_processed_damage_event_ids.erase(key)
+	return true
 
 
 func _pick_random_bot_vehicle_id(seed_key: String = "") -> String:

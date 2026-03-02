@@ -15,6 +15,8 @@ signal matchmaking_found(matched)
 var account: NakamaAPI.ApiAccount
 var current_match: NakamaRTAPI.Match
 var players: Dictionary = {} # session_id -> presence
+@export var enable_realtime_listeners: bool = false
+@export var auto_join_matchmaker_matches: bool = false
 
 # ---------- OpCodes ----------
 # Define your game-specific op codes here
@@ -67,13 +69,16 @@ func _post_authentication() -> void:
 # ---------- Socket Listeners ----------
 
 func _setup_socket_listeners() -> void:
+	if not enable_realtime_listeners:
+		return
 	var socket := NakamaManager.socket
 	if socket == null:
 		return
 
 	socket.received_match_state.connect(_on_match_state)
 	socket.received_match_presence.connect(_on_match_presence)
-	socket.received_matchmaker_matched.connect(_on_matchmaker_matched)
+	if auto_join_matchmaker_matches:
+		socket.received_matchmaker_matched.connect(_on_matchmaker_matched)
 
 
 func _on_match_state(match_state: NakamaRTAPI.MatchData) -> void:
@@ -205,10 +210,10 @@ func update_account_async(username: String = "", display_name: String = "", avat
 # ---------- RPC Helper ----------
 
 ## Call a server RPC
-func rpc_async(rpc_id: String, payload: Dictionary = {}) -> NakamaAPI.ApiRpc:
+func rpc_async(rpc_name: String, payload: Dictionary = {}) -> NakamaAPI.ApiRpc:
 	var payload_str := JSON.stringify(payload) if not payload.is_empty() else ""
-	var result: NakamaAPI.ApiRpc = await NakamaManager.client.rpc_async(NakamaManager.session, rpc_id, payload_str)
+	var result: NakamaAPI.ApiRpc = await NakamaManager.client.rpc_async(NakamaManager.session, rpc_name, payload_str)
 	if result.is_exception():
-		push_error("[GameState] RPC '%s' failed: %s" % [rpc_id, result])
+		push_error("[GameState] RPC '%s' failed: %s" % [rpc_name, result])
 		return null
 	return result

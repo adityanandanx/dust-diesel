@@ -87,7 +87,10 @@ func _send_sync_packet() -> void:
 		state["ehp"] = snappedf(dmg.engine_hp, 1.0)
 		state["chp"] = snappedf(dmg.chassis_hp, 1.0)
 		state["whp"] = snappedf(dmg.weapon_mount_hp, 1.0)
-		state["wlhp"] = snappedf(dmg.wheel_hp[0], 1.0)
+		state["wl0"] = snappedf(dmg.wheel_hp[0], 1.0)
+		state["wl1"] = snappedf(dmg.wheel_hp[1], 1.0)
+		state["wl2"] = snappedf(dmg.wheel_hp[2], 1.0)
+		state["wl3"] = snappedf(dmg.wheel_hp[3], 1.0)
 	var fuel = car.get_node_or_null("FuelSystem")
 	if fuel and "fuel" in fuel:
 		state["fuel"] = snappedf(fuel.fuel, 1.0)
@@ -129,9 +132,14 @@ func _on_match_state(match_state: NakamaRTAPI.MatchData) -> void:
 		dmg.engine_hp = float(data["ehp"])
 		dmg.chassis_hp = float(data["chp"])
 		dmg.weapon_mount_hp = float(data["whp"])
-		if "wlhp" in data:
-			for i in range(4):
-				dmg.wheel_hp[i] = float(data["wlhp"])
+		if "wl0" in data:
+			dmg.wheel_hp[0] = float(data["wl0"])
+		if "wl1" in data:
+			dmg.wheel_hp[1] = float(data["wl1"])
+		if "wl2" in data:
+			dmg.wheel_hp[2] = float(data["wl2"])
+		if "wl3" in data:
+			dmg.wheel_hp[3] = float(data["wl3"])
 	var fuel = car.get_node_or_null("FuelSystem")
 	if fuel and "fuel" in data:
 		fuel.fuel = float(data["fuel"])

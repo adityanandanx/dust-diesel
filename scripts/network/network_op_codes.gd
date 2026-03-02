@@ -8,3 +8,4 @@ const DAMAGE_EVENT = 3
 const PICKUP_CLAIM = 4
 const PLAYER_SPAWNED = 5
 const GAME_STARTED = 6
+const PLAYER_RESPAWN = 16

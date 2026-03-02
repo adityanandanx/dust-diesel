@@ -125,6 +125,16 @@ func can_fire() -> bool:
 	return true
 
 
+func can_apply_gameplay_effects() -> bool:
+	if owner_car == null:
+		return false
+	if not is_instance_valid(owner_car):
+		return false
+	if owner_car.has_method("is_authoritative_instance"):
+		return bool(owner_car.is_authoritative_instance())
+	return NakamaManager.current_match == null or bool(owner_car.get("is_player"))
+
+
 func fire() -> void:
 	if not can_fire():
 		return
@@ -150,7 +160,7 @@ func fire() -> void:
 	_spawn_fire_particles()
 	_apply_recoil()
 	
-	if owner_car and owner_car.is_player and NakamaManager.current_match:
+	if NakamaManager.current_match and can_apply_gameplay_effects():
 		var data = {
 			"session_id": owner_car.network_id,
 			"slot": mount_type

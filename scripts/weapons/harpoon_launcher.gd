@@ -135,6 +135,9 @@ func _physics_process(delta: float) -> void:
 			# Hard stop: never apply pull force when already within minimum tether distance.
 			tether_timer = maxf(tether_timer - delta * 1.5, 0.0)
 			return
+		if not can_apply_gameplay_effects():
+			tether_timer = 0.0
+			return
 		var effective_rest: float = maxf(_tether_rest_length, min_tether_length)
 		var stretch: float = maxf(dist - effective_rest, 0.0)
 

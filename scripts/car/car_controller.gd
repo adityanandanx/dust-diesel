@@ -132,6 +132,15 @@ func _physics_process(delta: float) -> void:
 	_handle_weapons()
 
 
+## True when this car instance is allowed to mutate gameplay state in multiplayer.
+func is_authoritative_instance() -> bool:
+	if NakamaManager.current_match == null:
+		return true
+	if uses_player_input:
+		return true
+	return is_bot and NakamaManager.is_host
+
+
 func _handle_steering(delta: float) -> void:
 	if not is_player or not uses_player_input:
 		return

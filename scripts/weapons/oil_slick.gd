@@ -18,3 +18,4 @@ func _do_fire() -> void:
 	puddle.global_position = owner_car.global_position + behind
 	puddle.global_position.y = 0.05 ## just above ground
 	puddle.lifetime = puddle_lifetime
+	puddle.owner_car = owner_car

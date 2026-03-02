@@ -20,6 +20,8 @@ func _do_fire() -> void:
 		_flame_particles.emitting = true
 	if _smoke_particles:
 		_smoke_particles.emitting = true
+	if not can_apply_gameplay_effects():
+		return
 	# Cone damage check — find all cars in range and angle
 	var origin: Vector3 = get_muzzle_position()
 	var forward: Vector3 = get_muzzle_direction()

@@ -22,9 +22,6 @@ extends Control
 var is_ready: bool = false
 var is_host: bool = true
 var invite_code: String = ""
-var _map_ids: Array[String] = []
-var _is_updating_map_selector: bool = false
-var _is_updating_bot_spin: bool = false
 
 
 func _ready() -> void:
@@ -39,15 +36,7 @@ func _ready() -> void:
 	if NakamaManager.current_match:
 		invite_code = NakamaManager.match_name
 		code_label.text = "INVITE CODE: %s" % invite_code
-		
-		# Restore host status from NakamaManager — only set it the first time
-		# (when we're the only player, i.e. we just created the match).
-		# On subsequent lobby loads (e.g. returning from VehicleSelect), just read it back.
-		if NakamaManager.is_host:
-			is_host = true
-		else:
-			is_host = NakamaManager.connected_players.size() <= 1
-			NakamaManager.is_host = is_host
+		is_host = NakamaManager.is_host
 		start_button.visible = is_host
 
 		NakamaManager.player_joined.connect(_on_player_joined)

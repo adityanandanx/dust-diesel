@@ -46,6 +46,10 @@ func _detonate(target: VehicleBody3D = null) -> void:
 		if fx.has_method("explode"):
 			fx.explode()
 
+	if not _can_apply_gameplay_effects(valid_owner):
+		_deferred_cleanup()
+		return
+
 	# Direct damage to trigger target
 	if target and target.has_node("DamageSystem"):
 		var dmg = target.get_node("DamageSystem")
@@ -115,3 +119,13 @@ func _get_valid_owner_car() -> Node:
 	if owner_car.is_queued_for_deletion():
 		return null
 	return owner_car
+
+
+func _can_apply_gameplay_effects(valid_owner: Node) -> bool:
+	if NakamaManager.current_match == null:
+		return true
+	if valid_owner == null:
+		return false
+	if valid_owner.has_method("is_authoritative_instance"):
+		return bool(valid_owner.is_authoritative_instance())
+	return bool(valid_owner.get("is_player"))

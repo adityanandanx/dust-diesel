@@ -28,7 +28,7 @@ var wheel_hp: Array[float] = [50.0, 50.0, 50.0, 50.0] # FL, FR, RL, RR
 var weapon_mount_hp: float = 60.0
 
 
-func take_damage(zone: DamageZone, amount: float, attacker: Node = null, attacker_session_id: String = "", attacker_name: String = "") -> void:
+func take_damage(zone: DamageZone, amount: float, attacker: Node = null, attacker_session_id: String = "", attacker_name: String = "", event_id: String = "") -> void:
 	var attacker_identity: Dictionary = _resolve_attacker_identity(attacker)
 	if attacker_session_id == "":
 		attacker_session_id = str(attacker_identity.get("session_id", ""))
@@ -39,10 +39,15 @@ func take_damage(zone: DamageZone, amount: float, attacker: Node = null, attacke
 		var car = get_parent() as Car
 		if car == null:
 			return
+		if car.has_method("is_authoritative_instance") and not bool(car.is_authoritative_instance()):
+			return
+		if event_id == "":
+			event_id = "%s:%d:%d" % [str(car.network_id), Time.get_ticks_msec(), randi()]
 		var data = {
 			"target": car.network_id if car.network_id != "" else NakamaManager.current_match.self_user.session_id,
 			"zone": zone,
-			"amount": amount
+			"amount": amount,
+			"event_id": event_id,
 		}
 		if attacker_session_id != "":
 			data["attacker_session_id"] = attacker_session_id

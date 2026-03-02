@@ -94,6 +94,8 @@ func _end_emp_zone() -> void:
 func _apply_emp_to_cars_in_zone() -> void:
 	if not owner_car:
 		return
+	if not can_apply_gameplay_effects():
+		return
 
 	var cars: Array[Node] = get_tree().get_nodes_in_group("cars")
 	var center: Vector3 = owner_car.global_position

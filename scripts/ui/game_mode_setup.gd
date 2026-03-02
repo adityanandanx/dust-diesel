@@ -69,7 +69,7 @@ func _populate_map_selector() -> void:
 func _refresh_ui_from_settings() -> void:
 	_is_syncing_ui = true
 	mode_selector.select(0)
-	time_spin.value = maxi(1, int(NakamaManager.selected_match_time_seconds / 60))
+	time_spin.value = maxi(1, int(float(NakamaManager.selected_match_time_seconds) / 60.0))
 	bots_spin.value = NakamaManager.selected_bot_count
 
 	var map_index: int = _map_ids.find(NakamaManager.selected_map)
@@ -131,6 +131,7 @@ func _on_start_pressed() -> void:
 		return
 	_push_local_settings()
 	NakamaManager.sync_bot_roster(_build_bot_roster())
+	NakamaManager.set_match_phase(NakamaManager.MATCH_PHASE_IN_PROGRESS)
 	NakamaManager.send_match_state(NakamaManager.OpCodes.GAME_STARTED, "")
 	_on_game_started()
 

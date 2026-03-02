@@ -30,6 +30,9 @@ func _on_body_entered(body: Node) -> void:
 	var speed_kmh: float = owner_car.linear_velocity.length() * 3.6
 	if speed_kmh < min_ram_speed:
 		return
+	if NakamaManager.current_match and owner_car and owner_car.has_method("is_authoritative_instance"):
+		if not bool(owner_car.is_authoritative_instance()):
+			return
 
 	# Apply weapon-grade damage instead of collision damage
 	if body.has_node("DamageSystem"):

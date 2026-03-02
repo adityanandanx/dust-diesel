@@ -21,6 +21,10 @@ var selected_map: String = "boneyard"
 var selected_bot_count: int = 3
 var selected_game_mode: String = "free_for_all"
 var selected_match_time_seconds: int = 300
+var current_match_phase: String = "lobby"
+
+const MATCH_PHASE_LOBBY := "lobby"
+const MATCH_PHASE_IN_PROGRESS := "in_progress"
 
 enum OpCodes {
 	POSITION_SYNC = 1,
@@ -37,7 +41,8 @@ enum OpCodes {
 	BOT_COUNT_SELECT = 12,
 	BOT_SYNC = 13,
 	GAME_SETTINGS = 14,
-	ROUND_RESTART = 15
+	ROUND_RESTART = 15,
+	PLAYER_RESPAWN = 16
 }
 
 # Dictionary of session_id to user data
@@ -254,11 +259,12 @@ func create_match(p_match_name: String = "") -> bool:
 	selected_bot_count = 3
 	selected_game_mode = "free_for_all"
 	selected_match_time_seconds = 300
+	current_match_phase = MATCH_PHASE_LOBBY
 	
 	# Generate a short invite code and store the mapping
 	var code := _generate_short_code()
 	match_name = code
-	var payload := JSON.stringify({"match_id": current_match.match_id})
+	var payload := JSON.stringify({"match_id": current_match.match_id, "phase": MATCH_PHASE_LOBBY})
 	var ack = await client.write_storage_objects_async(session, [
 		NakamaWriteStorageObject.new("match_codes", code, 2, 1, payload, "")
 	])
@@ -278,14 +284,12 @@ func join_match(code: String) -> bool:
 		printerr("Cannot join match — socket not ready.")
 		return false
 	
-	# Look up the short code in Nakama Storage to get the real match_id
-	var _result = await client.list_storage_objects_async(session, "match_codes", session.user_id, 100)
-	
 	# We need to find the code across ALL users, so try reading it directly
 	# Since we don't know the writer's user_id, we search our own first
 	# A simpler approach: try using the code to read via RPC or list
 	# For now, attempt a direct join in case code IS a match_id (UUID)
 	var real_match_id := code
+	var resolved_phase: String = MATCH_PHASE_LOBBY
 	
 	# If the code looks short (not a UUID), look it up
 	if code.length() < 30:
@@ -295,6 +299,7 @@ func join_match(code: String) -> bool:
 		# we use a workaround: store codes under a well-known "system" approach.
 		# For simplicity, we'll try reading from all connected users.
 		var found := false
+		var found_phase: String = MATCH_PHASE_LOBBY
 		
 		# Try reading from the host who wrote it (we don't know their ID)
 		# Use list_storage_objects to scan the collection
@@ -308,6 +313,7 @@ func join_match(code: String) -> bool:
 					var data = JSON.parse_string(obj.value)
 					if data and "match_id" in data:
 						real_match_id = data["match_id"]
+						found_phase = _normalize_match_phase(str(data.get("phase", MATCH_PHASE_LOBBY)))
 						found = true
 						break
 			if not found and list_result.cursor and list_result.cursor != "":
@@ -317,6 +323,33 @@ func join_match(code: String) -> bool:
 		
 		if not found:
 			printerr("Could not find match with code: ", code)
+			return false
+		if found_phase != MATCH_PHASE_LOBBY:
+			printerr("Match is already in progress and cannot be joined: ", code)
+			return false
+		resolved_phase = found_phase
+	else:
+		# Raw match ID join path: best-effort scan to find mapped phase metadata.
+		var cursor := ""
+		var found_by_match_id: bool = false
+		while true:
+			var list_result = await client.list_storage_objects_async(session, "match_codes", "", 100, cursor)
+			if list_result.is_exception():
+				break
+			for obj in list_result.objects:
+				var data = JSON.parse_string(obj.value)
+				if data and str(data.get("match_id", "")) == real_match_id:
+					resolved_phase = _normalize_match_phase(str(data.get("phase", MATCH_PHASE_LOBBY)))
+					found_by_match_id = true
+					break
+			if found_by_match_id:
+				break
+			if list_result.cursor and list_result.cursor != "":
+				cursor = list_result.cursor
+			else:
+				break
+		if found_by_match_id and resolved_phase != MATCH_PHASE_LOBBY:
+			printerr("Match is already in progress and cannot be joined: ", code)
 			return false
 	
 	var joined_match: NakamaRTAPI.Match = await socket.join_match_async(real_match_id)
@@ -332,6 +365,7 @@ func join_match(code: String) -> bool:
 	selected_bot_count = 3
 	selected_game_mode = "free_for_all"
 	selected_match_time_seconds = 300
+	current_match_phase = resolved_phase
 	
 	_add_player(session.user_id, session.username, current_match.self_user.session_id)
 	
@@ -352,7 +386,25 @@ func leave_match() -> void:
 		selected_map = "boneyard"
 		selected_game_mode = "free_for_all"
 		selected_match_time_seconds = 300
+		current_match_phase = MATCH_PHASE_LOBBY
 		connected_players.clear()
+
+
+func set_match_phase(phase: String) -> void:
+	if match_name == "" or session == null or client == null:
+		current_match_phase = _normalize_match_phase(phase)
+		return
+	var normalized_phase: String = _normalize_match_phase(phase)
+	current_match_phase = normalized_phase
+	var payload := JSON.stringify({
+		"match_id": current_match.match_id if current_match else "",
+		"phase": normalized_phase,
+	})
+	var ack = await client.write_storage_objects_async(session, [
+		NakamaWriteStorageObject.new("match_codes", match_name, 2, 1, payload, "")
+	])
+	if ack.is_exception():
+		printerr("Failed to update match phase for code ", match_name, ": ", ack)
 
 
 func _on_match_presence(p_presence: NakamaRTAPI.MatchPresenceEvent) -> void:
@@ -523,6 +575,13 @@ func _normalize_game_mode(game_mode: String) -> String:
 	if mode == "free_for_all":
 		return mode
 	return "free_for_all"
+
+
+func _normalize_match_phase(phase: String) -> String:
+	var normalized: String = phase.strip_edges().to_lower()
+	if normalized == MATCH_PHASE_IN_PROGRESS:
+		return MATCH_PHASE_IN_PROGRESS
+	return MATCH_PHASE_LOBBY
 
 
 func _apply_bot_roster(bot_variant: Variant) -> void:
